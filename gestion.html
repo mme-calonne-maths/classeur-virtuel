@@ -175,26 +175,54 @@ details.carte[open] summary { margin-bottom: 14px; }
 @media (prefers-reduced-motion: no-preference) {
   .bouton, .icone { transition: background-color .15s ease; }
 }
+
+/* Classeurs (un par classe) */
+.choix { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.puce {
+  display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 16px 0 12px;
+  border-radius: 22px; border: 2px solid transparent; background: var(--carte); color: var(--texte);
+  font-weight: 700; cursor: pointer; box-shadow: 0 1px 2px var(--ombre); -webkit-tap-highlight-color: transparent;
+}
+.puce[aria-pressed="true"] { border-color: var(--texte); }
+.puce.est-supprimee span:last-child { text-decoration: line-through; opacity: .6; }
+.puce__pastille { width: 16px; height: 16px; border-radius: 50%; background: var(--k); flex: none; }
+.puce--ajout { background: transparent; border: 2px dashed var(--trait); box-shadow: none; color: var(--bleu); }
+.k-bleu { --k: #2a4a9c; } .k-rouge { --k: #b23a3a; } .k-vert { --k: #2f7a55; }
+.k-violet { --k: #6a4aa0; } .k-orange { --k: #cf7428; } .k-gris { --k: #4b5563; }
+.classeur-carte { border-top: 8px solid var(--k); display: grid; gap: 14px; }
+.classeur-carte__haut { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.classeur-carte__haut h2 { flex: 1 1 auto; margin: 0; }
+.deux { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+.couleurs { display: flex; gap: 10px; flex-wrap: wrap; border: 0; margin: 0; padding: 0; }
+.couleurs legend { font-weight: 700; font-size: .95rem; margin-bottom: 6px; padding: 0; }
+.couleur { position: relative; width: 44px; height: 44px; border-radius: 50%; background: var(--k); cursor: pointer; }
+.couleur input { position: absolute; inset: 0; opacity: 0; cursor: pointer; margin: 0; }
+.couleur:has(input:checked) { box-shadow: 0 0 0 3px var(--carte), 0 0 0 6px var(--texte); }
+.couleur:has(input:focus-visible) { outline: 3px solid var(--bleu); outline-offset: 6px; }
+.lien-eleves { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.lien-eleves input { flex: 1 1 240px; min-width: 0; min-height: 44px; padding: 8px 12px; border-radius: 10px; border: 1px solid var(--trait); background: var(--champ); color: var(--texte); font-size: .92rem; }
+.bouton--danger { color: var(--rouge); }
+.bandeau { border-left: 6px solid var(--vert); }
 </style>
 </head>
 <body>
 <div class="page">
   <header class="entete">
-    <h1>Gérer le classeur</h1>
-    <a class="bouton" href="./" target="_blank" rel="noopener">Voir le classeur</a>
+    <h1>Gérer les classeurs</h1>
+    <a class="bouton" href="./" target="_blank" rel="noopener">Voir les classeurs</a>
   </header>
 
   <p class="carte" id="ecran-chargement" role="status">Ouverture…</p>
 
   <section class="carte" id="ecran-connexion" hidden>
-    <h2>Relier cet appareil au classeur</h2>
-    <p>Pour modifier le classeur depuis cet appareil, il faut une clé d'accès GitHub. Cela se fait une seule fois par appareil.</p>
+    <h2>Relier cet appareil aux classeurs</h2>
+    <p>Pour modifier les classeurs depuis cet appareil, il faut une clé d'accès GitHub. Cela se fait une seule fois par appareil.</p>
     <ol class="etapes">
       <li>Touchez <b>Créer la clé</b> : GitHub s'ouvre dans un nouvel onglet (connectez-vous si on vous le demande).</li>
       <li>Dans <b>Expiration</b>, choisissez <b>No expiration</b>, puis descendez tout en bas et touchez <b>Generate token</b>.</li>
       <li>Touchez l'icône de copie à côté du code qui commence par <b>ghp_</b>, revenez ici et collez-le ci-dessous.</li>
     </ol>
-    <a class="bouton" id="lien-cle" target="_blank" rel="noopener"
+    <a class="bouton" target="_blank" rel="noopener"
        href="https://github.com/settings/tokens/new?scopes=public_repo&amp;description=Gestion%20du%20classeur">Créer la clé</a>
     <form id="form-connexion" class="ligne-boutons" autocomplete="off">
       <label class="champ" style="flex: 1 1 280px">
@@ -209,21 +237,24 @@ details.carte[open] summary { margin-bottom: 14px; }
 
   <section id="ecran-gestion" hidden>
     <div style="display: grid; gap: 22px">
-      <details class="carte">
-        <summary>Page de garde</summary>
-        <div class="reglages">
-          <label class="champ"><span>Titre du classeur</span><input id="r-titre"></label>
-          <label class="champ"><span>Sous-titre</span><input id="r-sousTitre"></label>
-          <label class="champ"><span>Nom affiché</span><input id="r-enseignant"></label>
-        </div>
-      </details>
+      <p class="carte bandeau" id="bandeau-maj" hidden>
+        <b>Une nouvelle version des classeurs est prête.</b> Touchez <b>Publier</b> en bas de l'écran pour l'installer.
+      </p>
+      <nav class="choix" id="choix-classeurs" aria-label="Classeurs"></nav>
+      <div id="classeur-courant"></div>
       <div class="rubriques" id="rubriques"></div>
       <button type="button" class="bouton nouvel-intercalaire" id="nouvel-intercalaire">
         <svg class="i" viewBox="0 0 20 20" aria-hidden="true"><path d="M10 4v12M4 10h12"/></svg>
         Nouvel intercalaire
       </button>
+      <details class="carte">
+        <summary>Réglages communs à tous les classeurs</summary>
+        <label class="champ"><span>Nom affiché sur les pages de garde</span><input id="r-enseignant" placeholder="Mme Calonne"></label>
+      </details>
       <p class="note">Les changements ne sont visibles par les élèves qu'après avoir touché <b>Publier</b>.
-        <button type="button" class="bouton bouton--discret" id="deconnexion">Retirer la clé de cet appareil</button></p>
+        <button type="button" class="bouton bouton--discret" id="deconnexion">Retirer la clé de cet appareil</button>
+        <label class="bouton bouton--discret" style="position: relative">Installer une mise à jour reçue
+          <input type="file" id="fichier-maj" accept=".html,text/html" style="position: absolute; inset: 0; opacity: 0"></label></p>
     </div>
   </section>
 
@@ -237,6 +268,10 @@ details.carte[open] summary { margin-bottom: 14px; }
     <button type="button" class="bouton bouton--principal" id="publier">Publier</button>
   </div>
 </footer>
+
+<!-- Nouvelle version du classeur, installée par « Publier » si celle en ligne est différente.
+     Rempli par tools/assembler-gestion.mjs : ne pas modifier à la main. -->
+<script type="application/json" id="mise-a-jour">{"index.html":"\u003c!doctype html>\n\u003chtml lang=\"fr\">\n\u003chead>\n\u003cmeta charset=\"utf-8\">\n\u003cmeta name=\"viewport\" content=\"width=device-width, initial-scale=1, viewport-fit=cover\">\n\u003cmeta name=\"robots\" content=\"noindex, nofollow\">\n\u003ctitle>Classeur de mathématiques\u003c/title>\n\u003clink rel=\"stylesheet\" href=\"style.css\">\n\u003c/head>\n\u003cbody>\n\u003cdiv class=\"app\" id=\"app\">\n\n  \u003cheader class=\"barre barre--haut\">\n    \u003ch1 class=\"nom\" id=\"nom\">Classeur\u003c/h1>\n    \u003cdiv class=\"outils\">\n      \u003ca class=\"bouton\" id=\"btn-classeurs\" href=\"./\" hidden>\n        \u003csvg viewBox=\"0 0 20 20\" aria-hidden=\"true\">\u003cpath d=\"M3.5 4h3v12h-3zM8.5 4h3v12h-3zM13.5 5l2.8-.8 2.2 11.4-2.8.7z\" />\u003c/svg>\n        \u003cspan>Classeurs\u003c/span>\n      \u003c/a>\n      \u003cbutton type=\"button\" class=\"bouton\" id=\"btn-sommaire\">\n        \u003csvg viewBox=\"0 0 20 20\" aria-hidden=\"true\">\u003cpath d=\"M4 5h12M4 10h12M4 15h8\" />\u003c/svg>\n        \u003cspan>Sommaire\u003c/span>\n      \u003c/button>\n      \u003cbutton type=\"button\" class=\"bouton\" id=\"btn-loupe\" disabled>\n        \u003csvg viewBox=\"0 0 20 20\" aria-hidden=\"true\">\u003ccircle cx=\"8.5\" cy=\"8.5\" r=\"5\" />\u003cpath d=\"M12.5 12.5 17 17M6.5 8.5h4M8.5 6.5v4\" />\u003c/svg>\n        \u003cspan>Agrandir\u003c/span>\n      \u003c/button>\n      \u003ca class=\"bouton\" id=\"btn-pdf\" target=\"_blank\" rel=\"noopener\" hidden>\n        \u003csvg viewBox=\"0 0 20 20\" aria-hidden=\"true\">\u003cpath d=\"M10 3v9m0 0-3.5-3.5M10 12l3.5-3.5M4 16h12\" />\u003c/svg>\n        \u003cspan>PDF\u003c/span>\n      \u003c/a>\n    \u003c/div>\n  \u003c/header>\n\n  \u003cmain class=\"table\" id=\"table\">\n    \u003cdiv class=\"classeur\" id=\"classeur\" hidden>\n      \u003cnav class=\"onglets\" id=\"onglets\" aria-label=\"Intercalaires\">\u003c/nav>\n      \u003cdiv class=\"carton\">\n        \u003cdiv id=\"livre\">\u003c/div>\n        \u003cdiv class=\"anneaux\" aria-hidden=\"true\">\u003ci>\u003c/i>\u003ci>\u003c/i>\u003ci>\u003c/i>\u003ci>\u003c/i>\u003c/div>\n      \u003c/div>\n    \u003c/div>\n    \u003cp class=\"message\" id=\"message\" role=\"status\">Ouverture du classeur…\u003c/p>\n  \u003c/main>\n\n  \u003cfooter class=\"barre barre--bas\">\n    \u003cbutton type=\"button\" class=\"bouton bouton--rond\" id=\"btn-prec\" aria-label=\"Page précédente\" disabled>\n      \u003csvg viewBox=\"0 0 20 20\" aria-hidden=\"true\">\u003cpath d=\"M12.5 4 6.5 10l6 6\" />\u003c/svg>\n    \u003c/button>\n    \u003cdiv class=\"repere\">\n      \u003cinput type=\"range\" id=\"curseur\" min=\"1\" max=\"1\" value=\"1\" step=\"1\" aria-label=\"Aller à la page\">\n      \u003cp class=\"ou\">\u003cstrong id=\"ou-page\">&nbsp;\u003c/strong>\u003cspan id=\"ou-titre\">\u003c/span>\u003c/p>\n    \u003c/div>\n    \u003cbutton type=\"button\" class=\"bouton bouton--rond\" id=\"btn-suiv\" aria-label=\"Page suivante\" disabled>\n      \u003csvg viewBox=\"0 0 20 20\" aria-hidden=\"true\">\u003cpath d=\"m7.5 4 6 6-6 6\" />\u003c/svg>\n    \u003c/button>\n  \u003c/footer>\n\u003c/div>\n\n\u003cdiv class=\"loupe\" id=\"loupe\" role=\"dialog\" aria-modal=\"true\" aria-label=\"Page agrandie\" hidden>\n  \u003cdiv class=\"barre barre--haut\">\n    \u003cp class=\"nom\" id=\"loupe-titre\">\u003c/p>\n    \u003cdiv class=\"outils\">\n      \u003cbutton type=\"button\" class=\"bouton bouton--rond\" id=\"loupe-moins\" aria-label=\"Réduire\">\n        \u003csvg viewBox=\"0 0 20 20\" aria-hidden=\"true\">\u003cpath d=\"M5 10h10\" />\u003c/svg>\n      \u003c/button>\n      \u003cbutton type=\"button\" class=\"bouton bouton--rond\" id=\"loupe-plus\" aria-label=\"Agrandir encore\">\n        \u003csvg viewBox=\"0 0 20 20\" aria-hidden=\"true\">\u003cpath d=\"M5 10h10M10 5v10\" />\u003c/svg>\n      \u003c/button>\n      \u003cbutton type=\"button\" class=\"bouton\" id=\"loupe-fermer\">\u003cspan>Fermer\u003c/span>\u003c/button>\n    \u003c/div>\n  \u003c/div>\n  \u003cdiv class=\"loupe__zone\" id=\"loupe-zone\">\u003c/div>\n\u003c/div>\n\n\u003cscript src=\"vendor/page-flip.browser.js\">\u003c/script>\n\u003cscript type=\"module\" src=\"app.js\">\u003c/script>\n\u003c/body>\n\u003c/html>\n","app.js":"// Classeur virtuel : lit classeur.json, assemble les feuilles (garde, sommaire, intercalaires, PDF)\n// et les donne à feuilleter.\nimport * as pdfjs from './vendor/pdf.min.js';\n\npdfjs.GlobalWorkerOptions.workerSrc = new URL('./vendor/pdf.worker.min.js', import.meta.url).href;\nconst POLICES_PDF = new URL('./vendor/standard_fonts/', import.meta.url).href;\n\nconst A4 = 210 / 297;\nconst NB_COULEURS = 6;\n// Les iPhone et iPad limitent la mémoire des images : on plafonne la taille de chaque page dessinée.\nconst PIXELS_MAX_PAGE = 4e6;\nconst PIXELS_MAX_LOUPE = 8e6;\nconst GARDER_AUTOUR = 4;   // pages gardées en mémoire de part et d'autre de la lecture\nconst DESSINER_AUTOUR = 3; // pages préparées d'avance\nconst ZOOMS = [1, 1.5, 2, 3];\n\nconst $ = (id) => document.getElementById(id);\nconst el = (balise, classe, texte) => {\n  const e = document.createElement(balise);\n  if (classe) e.className = classe;\n  if (texte !== undefined) e.textContent = texte;\n  return e;\n};\nconst adresse = (chemin) => chemin.split('/').map(encodeURIComponent).join('/');\nconst pluriel = (n, mot) => `${n} ${mot}${n > 1 ? 's' : ''}`;\nconst sansAnimation = matchMedia('(prefers-reduced-motion: reduce)');\n\nconst table = $('table');\nconst classeurEl = $('classeur');\nconst livre = $('livre');\n\nlet pages = [];       // toutes les feuilles, dans l'ordre\nlet rubriques = [];   // les intercalaires\nlet flip = null;      // la bibliothèque de feuilletage\nlet cible = null;     // page vers laquelle on est en train de sauter\n\n/* ---------- Chargement des PDF ---------- */\nconst documentsOuverts = new Map();\nfunction ouvrir(doc) {\n  if (!documentsOuverts.has(doc.fichier)) {\n    const tache = pdfjs.getDocument({ url: adresse(doc.fichier), standardFontDataUrl: POLICES_PDF });\n    documentsOuverts.set(doc.fichier, tache.promise);\n  }\n  return documentsOuverts.get(doc.fichier);\n}\n\n/* ---------- Assemblage du classeur ---------- */\nfunction decouperSommaire(lignes) {\n  // Répartit les lignes du sommaire sur une ou plusieurs feuilles, sans laisser un titre seul en bas.\n  const feuilles = [[]];\n  let place = 15;\n  lignes.forEach((ligne, i) => {\n    const suivante = lignes[i + 1];\n    const besoin = ligne.poids + (ligne.genre === 'entete' && suivante ? suivante.poids : 0);\n    if (besoin > place && feuilles[feuilles.length - 1].length) {\n      feuilles.push([]);\n      place = 20;\n    }\n    feuilles[feuilles.length - 1].push(ligne);\n    place -= ligne.poids;\n  });\n  return feuilles;\n}\n\nfunction assembler(donnees) {\n  rubriques = donnees.rubriques.filter((r) => r.documents.length);\n  rubriques.forEach((r, i) => { r.couleur = `c${(i % NB_COULEURS) + 1}`; });\n\n  const lignes = rubriques.flatMap((r) => [\n    { genre: 'entete', rubrique: r, poids: 2.5 },\n    ...r.documents.map((d) => ({ genre: 'fiche', doc: d, poids: Math.ceil(d.titre.length / 30) })),\n  ]);\n\n  pages = [{ genre: 'garde' }];\n  decouperSommaire(lignes).forEach((bloc, i) => pages.push({ genre: 'sommaire', lignes: bloc, suite: i > 0 }));\n  for (const r of rubriques) {\n    r.page = pages.length;\n    pages.push({ genre: 'intercalaire', rubrique: r });\n    for (const d of r.documents) {\n      d.page = pages.length;\n      for (let n = 1; n \u003c= d.pages; n++) pages.push({ genre: 'pdf', rubrique: r, doc: d, numero: n });\n    }\n  }\n  if (pages.length % 2) pages.push({ genre: 'notes' });\n}\n\nfunction ligneSommaire(titre, page) {\n  const b = el('button', 'ligne');\n  b.type = 'button';\n  b.dataset.aller = page;\n  b.append(el('span', 'ligne__titre', titre), el('span', 'ligne__points'), el('span', 'ligne__page', page + 1));\n  return b;\n}\n\nfunction dessinerFeuille(p, i, donnees) {\n  const page = el('div', 'page');\n  page.dataset.density = 'soft';\n  const f = el('div', 'feuille');\n  page.append(f);\n\n  if (p.genre === 'garde') {\n    f.classList.add('seyes', 'garde');\n    const etiquette = el('div', 'etiquette');\n    etiquette.append(el('h2', 'etiquette__titre', donnees.titre), el('hr', 'etiquette__trait'));\n    if (donnees.sousTitre) etiquette.append(el('p', 'etiquette__sous', donnees.sousTitre));\n    if (donnees.enseignant) etiquette.append(el('p', 'etiquette__nom', donnees.enseignant));\n    const conseil = el('p', 'conseil');\n    conseil.innerHTML = '\u003cb>Pour feuilleter\u003c/b> : fais glisser une page, utilise les flèches, ou touche un intercalaire.';\n    f.append(etiquette, conseil);\n  } else if (p.genre === 'sommaire') {\n    f.classList.add('seyes', 'sommaire');\n    const titre = el('h2', 'sommaire__titre');\n    titre.append(el('span', '', p.suite ? 'Sommaire (suite)' : 'Sommaire'));\n    const liste = el('div', 'sommaire__liste');\n    for (const ligne of p.lignes) {\n      if (ligne.genre === 'entete') {\n        const b = el('button', `entete ${ligne.rubrique.couleur}`);\n        b.type = 'button';\n        b.dataset.aller = ligne.rubrique.page;\n        b.append(el('span', 'entete__titre', ligne.rubrique.titre));\n        liste.append(b);\n      } else {\n        liste.append(ligneSommaire(ligne.doc.titre, ligne.doc.page));\n      }\n    }\n    f.append(titre, liste, el('span', 'folio', i + 1));\n  } else if (p.genre === 'intercalaire') {\n    const r = p.rubrique;\n    f.classList.add('intercalaire', r.couleur);\n    const liste = el('div', 'intercalaire__liste');\n    liste.style.setProperty('--lignes', r.documents.length);\n    r.documents.forEach((d) => liste.append(ligneSommaire(d.titre, d.page)));\n    const nbPages = r.documents.reduce((s, d) => s + d.pages, 0);\n    f.append(\n      el('h2', 'intercalaire__titre', r.titre),\n      el('p', 'intercalaire__compte', `${pluriel(r.documents.length, 'fiche')} · ${pluriel(nbPages, 'page')}`),\n      liste,\n      el('span', 'folio', i + 1),\n    );\n  } else if (p.genre === 'pdf') {\n    f.append(el('p', 'attente', 'Chargement de la page…'));\n  } else {\n    f.classList.add('seyes');\n  }\n  // En page simple, la bibliothèque fait tourner une copie de la feuille : une copie de \u003ccanvas> est vide,\n  // on y recopie donc l'image de la page.\n  page.cloneNode = function (profond) {\n    const copie = HTMLElement.prototype.cloneNode.call(this, profond);\n    const origine = this.querySelector('canvas');\n    const double = copie.querySelector('canvas');\n    if (origine && double && origine.width) double.getContext('2d').drawImage(origine, 0, 0);\n    return copie;\n  };\n  p.el = page;\n  p.feuille = f;\n  return page;\n}\n\n/* ---------- Dimensions : double page sur grand écran, page simple sinon ---------- */\nfunction disposer() {\n  const cadre = table.getBoundingClientRect();\n  const zone = { width: cadre.width, height: cadre.height - 16 }; // un peu d'air pour l'ombre du classeur\n  const double = zone.width >= 720 && zone.width > zone.height * 1.15;\n  const bord = double ? Math.round(Math.min(12, Math.max(7, zone.width * 0.008))) : 6;\n  let largeur;\n  if (double) {\n    const onglets = Math.round(Math.min(130, Math.max(88, zone.width * 0.1)));\n    classeurEl.style.setProperty('--onglets', `${onglets}px`);\n    largeur = Math.min(zone.width - onglets - 2 * bord, (zone.height - 2 * bord) * 2 * A4);\n  } else {\n    largeur = Math.min(zone.width - 2 * bord, (zone.height - 40 - 2 * bord) * A4);\n  }\n  largeur = Math.max(160, Math.floor(largeur));\n  classeurEl.dataset.mode = double ? 'double' : 'simple';\n  classeurEl.style.setProperty('--livre', `${largeur + (double ? 0 : 2 * bord)}px`);\n  classeurEl.style.setProperty('--bord', `${bord}px`);\n  livre.style.setProperty('--u', `${(double ? largeur / 2 : largeur) / 100}px`);\n  if (flip) {\n    // La bibliothèque choisit « page simple » quand la largeur passe sous 2 × minWidth : on s'en sert pour décider nous-mêmes.\n    flip.getSettings().minWidth = double ? 1 : 1e6;\n    flip.update();\n  }\n  return double;\n}\n\n/* ---------- Dessin des pages PDF, au plus près de la page affichée ---------- */\nconst densite = () => Math.min(window.devicePixelRatio || 1, 3);\nconst cleRendu = () => {\n  const { pageWidth, height } = flip.getBoundsRect();\n  return `${Math.round(pageWidth)}x${Math.round(height)}@${densite()}`;\n};\n\n// Safari ne rend la mémoire d'un canvas qu'une fois sa taille remise à zéro.\nfunction jeter(canvas) {\n  if (!canvas) return;\n  canvas.width = 0;\n  canvas.height = 0;\n  canvas.remove();\n}\n\nfunction prochaineADessiner() {\n  const centre = cible ?? flip.getCurrentPageIndex();\n  const cle = cleRendu();\n  let choix = null;\n  let distanceChoix = Infinity;\n  pages.forEach((p, i) => {\n    if (p.genre !== 'pdf') return;\n    const distance = Math.min(Math.abs(i - centre), Math.abs(i - flip.getCurrentPageIndex()));\n    if (distance > GARDER_AUTOUR && p.rendu) {\n      // Loin de la lecture : on libère la mémoire.\n      jeter(p.feuille.querySelector('canvas'));\n      p.el.classList.remove('est-prete');\n      p.rendu = null;\n    }\n    if (distance \u003c= DESSINER_AUTOUR && p.rendu !== cle && !p.erreur && Math.abs(i - centre) \u003c distanceChoix) {\n      choix = p;\n      distanceChoix = Math.abs(i - centre);\n    }\n  });\n  return choix;\n}\n\nasync function dessiner(p) {\n  const cle = cleRendu();\n  const { pageWidth, height } = flip.getBoundsRect();\n  try {\n    const page = await (await ouvrir(p.doc)).getPage(p.numero);\n    const base = page.getViewport({ scale: 1 });\n    let echelle = Math.min(pageWidth / base.width, height / base.height) * densite();\n    const pixels = base.width * base.height * echelle * echelle;\n    if (pixels > PIXELS_MAX_PAGE) echelle *= Math.sqrt(PIXELS_MAX_PAGE / pixels);\n    const vue = page.getViewport({ scale: echelle });\n    const canvas = el('canvas');\n    canvas.width = Math.ceil(vue.width);\n    canvas.height = Math.ceil(vue.height);\n    await page.render({ canvasContext: canvas.getContext('2d'), viewport: vue }).promise;\n    jeter(p.feuille.querySelector('canvas'));\n    p.feuille.append(canvas);\n    p.el.classList.add('est-prete');\n    p.rendu = cle;\n  } catch (erreur) {\n    console.error(`Page illisible : ${p.doc.fichier}`, erreur);\n    p.erreur = true;\n    p.feuille.querySelector('.attente').textContent = `Cette page n'a pas pu être affichée (${p.doc.titre}).`;\n  }\n}\n\nlet dessinEnCours = false;\nasync function dessinerAutour() {\n  if (dessinEnCours || !flip) return;\n  dessinEnCours = true;\n  try {\n    for (let p = prochaineADessiner(); p; p = prochaineADessiner()) await dessiner(p);\n  } finally {\n    dessinEnCours = false;\n  }\n}\n\n/* ---------- Navigation ---------- */\nconst estDouble = () => flip.getOrientation() === 'landscape';\nfunction visibles() {\n  const c = flip.getCurrentPageIndex();\n  return estDouble() ? [c, c + 1].filter((i) => i \u003c pages.length) : [c];\n}\n\nfunction aller(n, anime = true) {\n  n = Math.max(0, Math.min(pages.length - 1, n));\n  if (visibles().includes(n)) return;\n  cible = n;\n  dessinerAutour();\n  if (anime && !sansAnimation.matches) flip.flip(n);\n  else flip.turnToPage(n);\n}\nconst suivante = () => (sansAnimation.matches ? flip.turnToNextPage() : flip.flipNext());\nconst precedente = () => (sansAnimation.matches ? flip.turnToPrevPage() : flip.flipPrev());\n\nfunction decrire(indices) {\n  const noms = [];\n  for (const p of indices.map((i) => pages[i])) {\n    const nom = p.genre === 'pdf' ? p.doc.titre\n      : p.genre === 'intercalaire' ? p.rubrique.titre\n      : p.genre === 'sommaire' ? 'Sommaire'\n      : p.genre === 'garde' ? 'Page de garde' : '';\n    if (nom && !noms.includes(nom)) noms.push(nom);\n  }\n  return noms.join(' · ');\n}\n\nfunction actualiser() {\n  const vus = visibles();\n  const premier = vus[0];\n  const dernier = vus[vus.length - 1];\n  $('ou-page').textContent = vus.length > 1\n    ? `Pages ${premier + 1}–${dernier + 1} sur ${pages.length}`\n    : `Page ${premier + 1} sur ${pages.length}`;\n  $('ou-titre').textContent = decrire(vus);\n  $('curseur').value = premier + 1;\n  $('btn-prec').disabled = premier === 0;\n  $('btn-suiv').disabled = dernier >= pages.length - 1;\n\n  const rubriqueOuverte = vus.map((i) => pages[i].rubrique).filter(Boolean).pop();\n  for (const b of $('onglets').children) {\n    const ouvert = rubriques[b.dataset.rubrique] === rubriqueOuverte;\n    b.classList.toggle('est-ouvert', ouvert);\n    b.setAttribute('aria-current', ouvert ? 'true' : 'false');\n    if (ouvert && classeurEl.dataset.mode === 'simple') b.scrollIntoView({ block: 'nearest', inline: 'nearest' });\n  }\n\n  const pdfVus = vus.map((i) => pages[i]).filter((p) => p.genre === 'pdf');\n  $('btn-loupe').disabled = pdfVus.length === 0;\n  const lien = $('btn-pdf');\n  lien.hidden = pdfVus.length === 0 || 'apercu' in $('app').dataset;\n  if (pdfVus.length) {\n    lien.href = adresse(pdfVus[0].doc.fichier);\n    lien.setAttribute('aria-label', `Ouvrir le PDF : ${pdfVus[0].doc.titre}`);\n  }\n  try {\n    history.replaceState(null, '', premier ? `#p${premier + 1}` : location.pathname + location.search);\n  } catch { /* adresse non modifiable ici : sans importance */ }\n}\n\nconst pageDansAdresse = () => {\n  const m = /^#p(\\d+)$/.exec(location.hash);\n  return m ? Math.max(0, Math.min(pages.length - 1, Number(m[1]) - 1)) : null;\n};\n\n/* ---------- Gestes : la souris attrape le coin d'une page, le doigt balaie ou touche un bord ---------- */\nfunction brancherGestes() {\n  // Position dans le repère de la bibliothèque de feuilletage.\n  const position = (e) => {\n    const r = flip.getUI().getDistElement().getBoundingClientRect();\n    return { x: e.clientX - r.left, y: e.clientY - r.top };\n  };\n  const doigts = new Map();\n  let sourisPosee = false;\n\n  livre.addEventListener('pointerdown', (e) => {\n    const surLien = Boolean(e.target.closest('a, button'));\n    if (e.pointerType === 'touch') {\n      doigts.set(e.pointerId, { x: e.clientX, y: e.clientY, surLien, seul: doigts.size === 0 });\n      if (doigts.size > 1) doigts.forEach((d) => { d.seul = false; });\n      return;\n    }\n    if (surLien || e.button !== 0) return;\n    sourisPosee = true;\n    flip.startUserTouch(position(e));\n    e.preventDefault();\n  });\n\n  addEventListener('pointermove', (e) => {\n    if (e.pointerType !== 'touch' && flip) flip.userMove(position(e), false);\n  });\n\n  addEventListener('pointerup', (e) => {\n    if (e.pointerType !== 'touch') {\n      if (sourisPosee) flip.userStop(position(e));\n      sourisPosee = false;\n      return;\n    }\n    const d = doigts.get(e.pointerId);\n    doigts.delete(e.pointerId);\n    if (!d || !d.seul) return;\n    const dx = e.clientX - d.x;\n    const dy = e.clientY - d.y;\n    if (Math.abs(dx) > 36 && Math.abs(dx) > 1.3 * Math.abs(dy)) {\n      // Balayage : vers la gauche on avance, vers la droite on recule, où que le doigt se pose.\n      (dx \u003c 0 ? suivante : precedente)();\n    } else if (!d.surLien && Math.hypot(dx, dy) \u003c 10) {\n      // Toucher simple : le bord droit avance, le bord gauche recule.\n      const r = livre.getBoundingClientRect();\n      const ou = (e.clientX - r.left) / r.width;\n      if (ou > 0.78) suivante();\n      else if (ou \u003c 0.22) precedente();\n    }\n  });\n  addEventListener('pointercancel', (e) => {\n    doigts.delete(e.pointerId);\n    if (e.pointerType !== 'touch' && sourisPosee) {\n      sourisPosee = false;\n      flip.userStop(position(e));\n    }\n  });\n}\n\n/* ---------- Loupe ---------- */\nconst loupe = $('loupe');\nconst loupeZone = $('loupe-zone');\nlet zoom = 0;\nlet tirage = 0;\n\nasync function dessinerLoupe() {\n  const jeton = ++tirage;\n  const aAgrandir = visibles().map((i) => pages[i]).filter((p) => p.genre === 'pdf');\n  const largeur = Math.min(loupeZone.clientWidth - 32, 1000) * ZOOMS[zoom];\n  $('loupe-moins').disabled = zoom === 0;\n  $('loupe-plus').disabled = zoom === ZOOMS.length - 1;\n  const toiles = [];\n  for (const p of aAgrandir) {\n    const page = await (await ouvrir(p.doc)).getPage(p.numero);\n    const base = page.getViewport({ scale: 1 });\n    let echelle = (largeur / base.width) * densite();\n    const pixels = base.width * base.height * echelle * echelle;\n    if (pixels > PIXELS_MAX_LOUPE) echelle *= Math.sqrt(PIXELS_MAX_LOUPE / pixels);\n    const vue = page.getViewport({ scale: echelle });\n    const canvas = el('canvas');\n    canvas.width = Math.ceil(vue.width);\n    canvas.height = Math.ceil(vue.height);\n    canvas.style.width = `${Math.round(largeur)}px`;\n    canvas.style.height = `${Math.round((largeur * base.height) / base.width)}px`;\n    await page.render({ canvasContext: canvas.getContext('2d'), viewport: vue }).promise;\n    if (jeton !== tirage) return;\n    toiles.push(canvas);\n  }\n  viderLoupe();\n  loupeZone.append(...toiles);\n}\nfunction viderLoupe() {\n  [...loupeZone.querySelectorAll('canvas')].forEach(jeter);\n}\n\nfunction ouvrirLoupe() {\n  if ($('btn-loupe').disabled) return;\n  $('loupe-titre').textContent = decrire(visibles().filter((i) => pages[i].genre === 'pdf'));\n  loupe.hidden = false;\n  zoom = loupeZone.clientWidth \u003c 600 ? 1 : 0;\n  viderLoupe();\n  dessinerLoupe();\n  $('loupe-fermer').focus();\n}\nfunction fermerLoupe() {\n  tirage++;\n  loupe.hidden = true;\n  viderLoupe();\n  $('btn-loupe').focus();\n}\nfunction zoomer(sens) {\n  const nouveau = Math.max(0, Math.min(ZOOMS.length - 1, zoom + sens));\n  if (nouveau === zoom) return;\n  zoom = nouveau;\n  dessinerLoupe();\n}\n\n/* ---------- Étagère : le choix du classeur quand il y en a plusieurs ---------- */\nfunction afficherEtagere(donnees, demande) {\n  const titre = donnees.enseignant ? `Les classeurs de ${donnees.enseignant}` : 'Les classeurs';\n  document.title = titre;\n  $('nom').textContent = titre;\n  $('app').classList.add('est-etagere');\n  if (!donnees.classeurs.length) {\n    annoncer(\"Aucun classeur pour l'instant. Ils apparaîtront ici dès que des fiches seront ajoutées.\", true);\n    return;\n  }\n  annoncer(demande ? \"Ce lien ne correspond à aucun classeur. Choisis le tien ci-dessous.\" : '', Boolean(demande));\n  const etagere = el('nav', 'etagere');\n  etagere.setAttribute('aria-label', 'Classeurs');\n  for (const c of donnees.classeurs) {\n    const n = c.rubriques.reduce((s, r) => s + r.documents.length, 0);\n    const lien = el('a', 'dos');\n    lien.href = `?classeur=${encodeURIComponent(c.lien)}`;\n    lien.dataset.couleur = c.couleur || 'bleu';\n    const etiquette = el('span', 'dos__etiquette');\n    etiquette.append(el('span', 'dos__nom', c.nom), el('span', 'dos__titre', c.titre), el('span', 'dos__compte', pluriel(n, 'fiche')));\n    lien.append(el('span', 'dos__anneaux'), etiquette);\n    etagere.append(lien);\n  }\n  table.append(etagere);\n}\n\n/* ---------- Démarrage ---------- */\nfunction annoncer(texte, erreur = false) {\n  const m = $('message');\n  m.textContent = texte;\n  m.classList.toggle('est-erreur', erreur);\n  m.hidden = !texte;\n}\n\nasync function compterPagesManquantes(classeur) {\n  // classeur.json donne normalement le nombre de pages ; sinon on ouvre le PDF pour le connaître.\n  for (const r of classeur.rubriques) {\n    for (const d of r.documents) {\n      if (d.pages) continue;\n      try {\n        d.pages = (await ouvrir(d)).numPages;\n      } catch (erreur) {\n        console.error(`PDF illisible : ${d.fichier}`, erreur);\n        d.pages = 0;\n      }\n    }\n    r.documents = r.documents.filter((d) => d.pages > 0);\n  }\n}\n\nasync function demarrer() {\n  let donnees;\n  try {\n    const reponse = await fetch('classeur.json', { cache: 'no-cache' });\n    if (!reponse.ok) throw new Error(`HTTP ${reponse.status}`);\n    donnees = await reponse.json();\n  } catch (erreur) {\n    console.error(erreur);\n    annoncer(\"Le classeur n'a pas pu s'ouvrir. Vérifie ta connexion puis recharge la page.\", true);\n    return;\n  }\n  // Ancien format (un seul classeur) : on l'emballe comme une liste d'un classeur.\n  if (!Array.isArray(donnees.classeurs)) {\n    donnees = {\n      enseignant: donnees.enseignant || '',\n      classeurs: [{ lien: '', nom: donnees.titre || 'Classeur', titre: donnees.titre || 'Classeur de mathématiques', sousTitre: donnees.sousTitre || '', couleur: 'bleu', rubriques: donnees.rubriques || [] }],\n    };\n  }\n  const tous = donnees.classeurs;\n  const demande = new URLSearchParams(location.search).get('classeur');\n  const classeur = tous.find((c) => c.lien === demande) || (tous.length === 1 ? tous[0] : null);\n  if (!classeur) {\n    afficherEtagere(donnees, demande);\n    return;\n  }\n  if (tous.length > 1) $('btn-classeurs').hidden = false;\n  document.documentElement.dataset.couleur = classeur.couleur || 'bleu';\n  const garde = { titre: classeur.titre, sousTitre: classeur.sousTitre, enseignant: donnees.enseignant };\n  donnees = garde;\n  classeur.rubriques ??= [];\n  await compterPagesManquantes(classeur);\n  assembler(classeur);\n\n  document.title = tous.length > 1 ? `${classeur.nom} · ${classeur.titre}` : classeur.titre;\n  $('nom').textContent = document.title;\n  if (!rubriques.length) {\n    annoncer(\"Ce classeur est encore vide. Les fiches apparaîtront ici dès qu'elles seront ajoutées.\", true);\n    return;\n  }\n\n  const feuilles = pages.map((p, i) => dessinerFeuille(p, i, donnees));\n  livre.append(...feuilles);\n\n  const onglets = $('onglets');\n  rubriques.forEach((r, i) => {\n    const b = el('button', `onglet ${r.couleur}`, r.titre);\n    b.type = 'button';\n    b.dataset.rubrique = i;\n    b.title = r.titre;\n    b.addEventListener('click', () => aller(r.page));\n    onglets.append(b);\n  });\n\n  classeurEl.hidden = false;\n  annoncer('');\n  const double = disposer();\n\n  flip = new St.PageFlip(livre, {\n    width: 420, height: Math.round(420 / A4), size: 'stretch',\n    minWidth: 120, maxWidth: 4000, minHeight: 100, maxHeight: 6000,\n    showCover: false, usePortrait: true, mobileScrollSupport: false,\n    flippingTime: 650, maxShadowOpacity: 0.35, drawShadow: true,\n    useMouseEvents: false, showPageCorners: true, // les gestes sont gérés par brancherGestes()\n    startPage: pageDansAdresse() ?? 0,\n  });\n  flip.getSettings().minWidth = double ? 1 : 1e6;\n  flip.loadFromHTML(feuilles);\n  flip.update();\n\n  flip.on('flip', () => { cible = null; actualiser(); dessinerAutour(); });\n  flip.on('changeOrientation', () => { actualiser(); dessinerAutour(); });\n\n  const curseur = $('curseur');\n  curseur.max = pages.length;\n  curseur.addEventListener('input', () => {\n    $('ou-page').textContent = `Page ${curseur.value} sur ${pages.length}`;\n    $('ou-titre').textContent = decrire([curseur.value - 1]);\n  });\n  curseur.addEventListener('change', () => { aller(curseur.value - 1, false); actualiser(); });\n\n  $('btn-prec').addEventListener('click', precedente);\n  $('btn-suiv').addEventListener('click', suivante);\n  $('btn-sommaire').addEventListener('click', () => aller(1));\n  $('btn-loupe').addEventListener('click', ouvrirLoupe);\n  $('loupe-fermer').addEventListener('click', fermerLoupe);\n  $('loupe-moins').addEventListener('click', () => zoomer(-1));\n  $('loupe-plus').addEventListener('click', () => zoomer(1));\n  livre.addEventListener('click', (e) => {\n    const b = e.target.closest('[data-aller]');\n    if (b) aller(Number(b.dataset.aller));\n  });\n  brancherGestes();\n\n  addEventListener('keydown', (e) => {\n    if (e.altKey || e.ctrlKey || e.metaKey) return;\n    if (!loupe.hidden) {\n      if (e.key === 'Escape') fermerLoupe();\n      else if (e.key === '+' || e.key === '=') zoomer(1);\n      else if (e.key === '-') zoomer(-1);\n      return;\n    }\n    if (e.target.closest('input, button, a')) {\n      if (e.target.matches('input') || e.key === ' ' || e.key === 'Enter') return;\n    }\n    if (e.key === 'ArrowRight' || e.key === 'PageDown') suivante();\n    else if (e.key === 'ArrowLeft' || e.key === 'PageUp') precedente();\n    else if (e.key === 'Home') aller(0);\n    else if (e.key === 'End') aller(pages.length - 1);\n    else return;\n    e.preventDefault();\n  });\n  addEventListener('hashchange', () => {\n    const n = pageDansAdresse();\n    if (n !== null) aller(n);\n  });\n\n  let attente = 0;\n  new ResizeObserver(() => {\n    clearTimeout(attente);\n    attente = setTimeout(() => {\n      disposer();\n      actualiser();\n      dessinerAutour();\n      if (!loupe.hidden) dessinerLoupe();\n    }, 80);\n  }).observe(table);\n\n  actualiser();\n  dessinerAutour();\n}\n\ndemarrer();\n","style.css":"/* Mise en page : un classeur ouvert posé sur une table. Outils en haut, feuilletage au centre,\n   repère de page en bas. Les pages créées par l'application (garde, sommaire, intercalaires)\n   se dimensionnent en multiples de --u (un centième de la largeur d'une feuille, fixé par app.js) : elles grandissent avec la feuille, comme du papier. */\n\n@font-face {\n  font-family: \"Playwrite FR Moderne\";\n  src: url(\"vendor/fonts/playwrite-fr-moderne-latin-400-normal.woff2\") format(\"woff2\");\n  font-weight: 400; font-display: swap;\n}\n@font-face {\n  font-family: \"Atkinson Hyperlegible\";\n  src: url(\"vendor/fonts/atkinson-hyperlegible-latin-400-normal.woff2\") format(\"woff2\");\n  font-weight: 400; font-display: swap;\n}\n@font-face {\n  font-family: \"Atkinson Hyperlegible\";\n  src: url(\"vendor/fonts/atkinson-hyperlegible-latin-700-normal.woff2\") format(\"woff2\");\n  font-weight: 700; font-display: swap;\n}\n\n:root {\n  /* La table et l'interface (changent avec le thème) */\n  --table: #d3dbd4;\n  --table-fonce: #bcc7be;\n  --texte: #1b2a26;\n  --texte-doux: #4e5f59;\n  --bouton: #f7faf7;\n  --bouton-bord: #a9b6ad;\n  --bouton-survol: #ffffff;\n  --repere: #2a4a9c;\n  --ombre: rgba(20, 35, 30, .28);\n  --voile-page: 1;\n\n  /* Le classeur et le papier (identiques dans les deux thèmes) */\n  --carton: #2a4a9c;\n  --carton-bord: #1b3273;\n  --papier: #fdfdfb;\n  --encre: #1d2a5e;\n  --encre-douce: #55618c;\n  --seyes: #e4e9f8;\n  --seyes-fort: #b9c5ec;\n  --rouge: #d5443a;\n  --acier: #c9ced6;\n  --acier-fonce: #7d8591;\n  --onglet-1: #f3a7ba;\n  --onglet-2: #f4d36b;\n  --onglet-3: #a2d7a7;\n  --onglet-4: #9dc8ef;\n  --onglet-5: #f5b481;\n  --onglet-6: #c6b5ee;\n\n  --ecriture: \"Playwrite FR Moderne\", \"Segoe Script\", \"Bradley Hand\", cursive;\n  --lecture: \"Atkinson Hyperlegible\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", sans-serif;\n}\n@media (prefers-color-scheme: dark) {\n  :root:not([data-theme=\"light\"]) {\n    --table: #17231e; --table-fonce: #101915; --texte: #e7eee8; --texte-doux: #a3b3aa;\n    --bouton: #23332c; --bouton-bord: #46594f; --bouton-survol: #2c4037; --repere: #9db6f5;\n    --ombre: rgba(0, 0, 0, .55); --voile-page: .9; color-scheme: dark;\n  }\n}\n:root[data-theme=\"dark\"] {\n  --table: #17231e; --table-fonce: #101915; --texte: #e7eee8; --texte-doux: #a3b3aa;\n  --bouton: #23332c; --bouton-bord: #46594f; --bouton-survol: #2c4037; --repere: #9db6f5;\n  --ombre: rgba(0, 0, 0, .55); --voile-page: .9; color-scheme: dark;\n}\n\n*, *::before, *::after { box-sizing: border-box; }\nhtml, body { height: 100%; }\nbody {\n  margin: 0;\n  background: var(--table);\n  color: var(--texte);\n  font-family: var(--lecture);\n  font-size: 16px;\n  line-height: 1.4;\n  overflow: hidden;\n  -webkit-text-size-adjust: 100%;\n}\n[hidden] { display: none !important; }\n\n.app {\n  height: 100%;\n  display: grid;\n  grid-template-columns: minmax(0, 1fr);\n  grid-template-rows: auto minmax(0, 1fr) auto;\n  gap: 10px;\n  padding-block: 10px;\n  padding-left: max(16px, env(safe-area-inset-left, 0px));\n  padding-right: max(16px, env(safe-area-inset-right, 0px));\n  background: radial-gradient(120% 90% at 50% 40%, var(--table) 55%, var(--table-fonce));\n}\n\n/* ---------- Barres et boutons ---------- */\n.barre { display: flex; align-items: center; gap: 12px; min-width: 0; }\n.nom {\n  flex: 1 1 auto; min-width: 0; margin: 0;\n  font-size: 1.05rem; font-weight: 700; letter-spacing: .01em;\n  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;\n}\n.outils { display: flex; gap: 8px; flex: none; }\n\n.bouton {\n  display: inline-flex; align-items: center; justify-content: center; gap: 6px;\n  min-height: 40px; padding: 0 14px;\n  border: 1px solid var(--bouton-bord); border-radius: 20px;\n  background: var(--bouton); color: var(--texte);\n  font: inherit; font-size: .95rem; font-weight: 700; text-decoration: none;\n  cursor: pointer; -webkit-tap-highlight-color: transparent;\n}\n.bouton svg { width: 20px; height: 20px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }\n.bouton:hover:not(:disabled) { background: var(--bouton-survol); }\n.bouton:active:not(:disabled) { transform: translateY(1px); }\n.bouton:disabled { opacity: .4; cursor: default; }\n.bouton--rond { width: 44px; min-height: 44px; padding: 0; border-radius: 50%; flex: none; }\n:focus-visible { outline: 3px solid var(--repere); outline-offset: 2px; }\n\n.repere { flex: 1 1 auto; min-width: 0; display: grid; gap: 2px; }\n.ou { margin: 0; font-size: .9rem; color: var(--texte-doux); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: center; }\n.ou strong { color: var(--texte); font-variant-numeric: tabular-nums; }\n.ou span:not(:empty)::before { content: \" · \"; }\n#curseur { width: 100%; margin: 0; height: 24px; accent-color: var(--repere); cursor: pointer; }\n\n/* ---------- La table et le classeur ---------- */\n.table { position: relative; min-width: 0; min-height: 0; display: grid; place-items: center; }\n.message { margin: 0; max-width: 34em; text-align: center; color: var(--texte-doux); }\n.message.est-erreur { color: var(--texte); }\n\n.classeur { display: grid; grid-template-columns: var(--livre, 300px); align-items: start; }\n.classeur[data-mode=\"double\"] { grid-template-columns: auto var(--onglets, 110px); }\n\n.carton {\n  position: relative; z-index: 1;\n  width: calc(var(--livre, 300px) + 2 * var(--bord, 8px));\n  padding: var(--bord, 8px);\n  background: linear-gradient(180deg, var(--carton), var(--carton-bord));\n  border-radius: 7px;\n  box-shadow: 0 1px 0 rgba(255, 255, 255, .25) inset, 0 14px 30px -8px var(--ombre), 0 2px 5px var(--ombre);\n}\n.classeur[data-mode=\"simple\"] .carton { width: var(--livre, 300px); }\n/* La bibliothèque pose ses propres largeurs minimales sur ce bloc : c'est disposer() qui décide de la taille. */\n#livre { --u: 4px; width: 100%; min-width: 0 !important; min-height: 0 !important; touch-action: none; user-select: none; -webkit-user-select: none; }\n/* La bibliothèque de feuilletage déclare ces classes ; on fixe ici ce dont la mise en page dépend. */\n.stf__wrapper { position: relative; width: 100%; }\n\n/* Anneaux : au pli en double page, sur le bord gauche en page simple. */\n.anneaux { position: absolute; inset: var(--bord, 8px); pointer-events: none; z-index: 30; }\n.anneaux i {\n  position: absolute; left: 50%; translate: -50% -50%;\n  width: clamp(22px, calc(var(--livre, 300px) * .042), 46px);\n  height: clamp(6px, calc(var(--livre, 300px) * .011), 12px);\n  border-radius: 99px;\n  background: linear-gradient(180deg, #f4f6f9, var(--acier) 45%, var(--acier-fonce));\n  box-shadow: 0 2px 3px rgba(0, 0, 0, .35);\n}\n.anneaux i:nth-child(1) { top: 9.6%; }\n.anneaux i:nth-child(2) { top: 36.5%; }\n.anneaux i:nth-child(3) { top: 63.5%; }\n.anneaux i:nth-child(4) { top: 90.4%; }\n.classeur[data-mode=\"simple\"] .anneaux i { left: 0; width: clamp(18px, calc(var(--livre, 300px) * .06), 30px); }\n\n/* ---------- Intercalaires (onglets) ---------- */\n.onglets { display: flex; min-width: 0; }\n.onglet {\n  border: 0; margin: 0; cursor: pointer;\n  font: inherit; font-size: .88rem; font-weight: 700; line-height: 1.15; color: var(--encre);\n  background: var(--c); -webkit-tap-highlight-color: transparent;\n  overflow: hidden; text-overflow: ellipsis;\n  box-shadow: 0 2px 4px var(--ombre);\n  transition: translate .15s ease, filter .15s ease;\n}\n.onglet:not(.est-ouvert) { filter: saturate(.8) brightness(.94); }\n.c1 { --c: var(--onglet-1); } .c2 { --c: var(--onglet-2); } .c3 { --c: var(--onglet-3); }\n.c4 { --c: var(--onglet-4); } .c5 { --c: var(--onglet-5); } .c6 { --c: var(--onglet-6); }\n\n/* Page simple : les onglets dépassent en haut du classeur. */\n.classeur[data-mode=\"simple\"] .onglets {\n  gap: 4px; padding: 0 10px; overflow-x: auto; scrollbar-width: none; align-items: flex-end; height: 40px;\n}\n.classeur[data-mode=\"simple\"] .onglets::-webkit-scrollbar { display: none; }\n.classeur[data-mode=\"simple\"] .onglet {\n  flex: 0 1 auto; min-width: 64px; max-width: 46%; height: 34px; padding: 0 12px;\n  border-radius: 9px 9px 0 0; white-space: nowrap; translate: 0 4px;\n}\n.classeur[data-mode=\"simple\"] .onglet.est-ouvert { translate: 0 0; height: 38px; }\n\n/* Double page : les onglets dépassent sur la tranche droite. */\n.classeur[data-mode=\"double\"] .onglets {\n  order: 2; flex-direction: column; gap: 6px; padding: 5% 0; align-self: stretch; margin-left: -4px;\n}\n.classeur[data-mode=\"double\"] .onglet {\n  flex: 0 1 62px; min-height: 36px; padding: 4px 8px 4px 22px; text-align: left;\n  border-radius: 0 10px 10px 0; translate: -8px 0;\n  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2;\n  overflow-wrap: anywhere;\n}\n.classeur[data-mode=\"double\"] .onglet:hover { translate: -4px 0; }\n.classeur[data-mode=\"double\"] .onglet.est-ouvert { translate: 0 0; }\n\n/* ---------- Les feuilles ---------- */\n.page { background: var(--papier); color: var(--encre); overflow: hidden; }\n.feuille { position: absolute; inset: 0; filter: brightness(var(--voile-page)); }\n.page canvas { object-fit: contain; }\n/* Ombre du pli, côté anneaux */\n.page::after { content: \"\"; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(90deg, rgba(20, 30, 60, .16), transparent 5%); }\n.page.--left::after { background: linear-gradient(270deg, rgba(20, 30, 60, .16), transparent 5%); }\n\n.attente {\n  position: absolute; inset: 0; display: grid; place-items: center; padding: calc(10 * var(--u)); text-align: center;\n  font-size: calc(3.4 * var(--u)); color: var(--encre-douce);\n}\n.page.est-prete .attente { display: none; }\n\n/* Papier Seyès : carreaux de 8 mm, interlignes de 2 mm, marge rouge. */\n.seyes {\n  --carreau: calc(3.81 * var(--u));\n  background-color: var(--papier);\n  background-image:\n    linear-gradient(90deg, transparent calc(4 * var(--carreau) - 1px), var(--rouge) calc(4 * var(--carreau) - 1px), var(--rouge) calc(4 * var(--carreau) + 1px), transparent calc(4 * var(--carreau) + 1px)),\n    linear-gradient(var(--seyes-fort) 1px, transparent 1px),\n    linear-gradient(90deg, var(--seyes-fort) 1px, transparent 1px),\n    linear-gradient(var(--seyes) 1px, transparent 1px);\n  background-size: 100% 100%, var(--carreau) var(--carreau), var(--carreau) var(--carreau), var(--carreau) calc(var(--carreau) / 4);\n  background-position: 0 0, 0 -1px, -1px 0, 0 -1px;\n}\n.folio { position: absolute; bottom: calc(2.6 * var(--u)); right: calc(5 * var(--u)); font-size: calc(2.6 * var(--u)); color: var(--encre-douce); font-variant-numeric: tabular-nums; }\n.page.--left .folio { right: auto; left: calc(5 * var(--u)); }\n\n/* Page de garde : l'étiquette du classeur */\n.garde { display: grid; align-content: center; justify-items: center; gap: calc(9 * var(--u)); padding: calc(8 * var(--u)); }\n.etiquette {\n  width: calc(78 * var(--u)); padding: calc(7 * var(--u)) calc(6 * var(--u)) calc(6 * var(--u)); text-align: center;\n  background: var(--papier); border: calc(.5 * var(--u)) solid var(--carton); border-radius: calc(3 * var(--u));\n  outline: calc(.25 * var(--u)) solid var(--carton); outline-offset: calc(-1.6 * var(--u));\n  box-shadow: 0 calc(1 * var(--u)) calc(2.4 * var(--u)) rgba(20, 30, 60, .2); rotate: -1.5deg;\n}\n.etiquette__titre { margin: 0; font-family: var(--ecriture); font-weight: 400; font-size: calc(6.6 * var(--u)); line-height: 1.5; text-wrap: balance; }\n.etiquette__sous { margin: calc(3 * var(--u)) 0 0; font-size: calc(3.5 * var(--u)); color: var(--encre-douce); text-wrap: balance; }\n.etiquette__nom { margin: calc(2.4 * var(--u)) 0 0; font-size: calc(3.9 * var(--u)); font-weight: 700; }\n.etiquette__trait { width: 40%; height: 0; margin: calc(3 * var(--u)) auto 0; border: 0; border-top: calc(.4 * var(--u)) solid var(--rouge); }\n.conseil { max-width: calc(72 * var(--u)); margin: 0; padding: calc(2.4 * var(--u)) calc(3.4 * var(--u)); background: var(--papier); border-radius: calc(1.6 * var(--u)); text-align: center; font-size: calc(3.3 * var(--u)); line-height: 1.45; color: var(--encre-douce); }\n.conseil b { color: var(--encre); }\n\n/* Sommaire */\n.sommaire { padding: calc(2 * var(--carreau)) calc(5 * var(--u)) calc(8 * var(--u)) calc(4 * var(--carreau)); }\n.sommaire__titre { margin: 0 0 calc(1.5 * var(--carreau)) calc(1 * var(--carreau)); font-family: var(--ecriture); font-weight: 400; font-size: calc(6 * var(--u)); line-height: calc(3 * var(--carreau)); }\n.sommaire__titre span { border-bottom: calc(.45 * var(--u)) solid var(--rouge); padding-bottom: calc(.4 * var(--u)); }\n.sommaire__liste { display: grid; margin: 0; padding: 0; list-style: none; }\n.ligne, .entete {\n  position: relative; display: flex; align-items: baseline; gap: calc(1.5 * var(--u)); width: 100%;\n  margin: 0; padding: 0 0 0 calc(1 * var(--carreau)); border: 0; background: none; color: inherit; text-align: left;\n  font: inherit; font-size: calc(3.5 * var(--u)); line-height: calc(1.5 * var(--carreau)); cursor: pointer;\n}\n.ligne > *, .entete > * { pointer-events: none; }\n.ligne__titre { min-width: 0; overflow-wrap: anywhere; }\n.ligne__points { flex: 1 1 calc(2 * var(--u)); min-width: calc(2 * var(--u)); border-bottom: calc(.3 * var(--u)) dotted var(--encre-douce); translate: 0 calc(-.9 * var(--u)); }\n.ligne__page { font-variant-numeric: tabular-nums; font-weight: 700; }\n.ligne:hover .ligne__titre, .entete:hover .entete__titre { text-decoration: underline; text-decoration-thickness: calc(.25 * var(--u)); text-underline-offset: calc(.6 * var(--u)); }\n.entete { margin-top: calc(1.5 * var(--carreau)); font-weight: 700; font-size: calc(3.9 * var(--u)); }\n.entete:first-child { margin-top: 0; }\n.entete::before {\n  content: \"\"; position: absolute; left: calc(-2.5 * var(--carreau)); top: calc(.25 * var(--carreau));\n  width: calc(1.5 * var(--carreau)); height: var(--carreau); border-radius: calc(.6 * var(--u)); background: var(--c);\n  box-shadow: 0 calc(.3 * var(--u)) calc(.6 * var(--u)) rgba(20, 30, 60, .25);\n}\n\n/* Intercalaire */\n.intercalaire { background: var(--c); padding: calc(13 * var(--u)) calc(9 * var(--u)) calc(9 * var(--u)); display: flex; flex-direction: column; gap: calc(6 * var(--u)); }\n.intercalaire::before { content: \"\"; position: absolute; inset: 0; background: linear-gradient(135deg, rgba(255, 255, 255, .28), transparent 45%, rgba(0, 0, 0, .06)); pointer-events: none; }\n.intercalaire__titre { position: relative; margin: 0; font-family: var(--ecriture); font-weight: 400; font-size: calc(9 * var(--u)); line-height: 1.5; overflow-wrap: anywhere; }\n.intercalaire__compte { position: relative; margin: calc(-3 * var(--u)) 0 0; font-size: calc(3.4 * var(--u)); }\n.intercalaire__liste {\n  position: relative; display: grid; align-content: start; gap: calc(.8 * var(--u)); margin: 0; padding: calc(4 * var(--u)) calc(5 * var(--u)); list-style: none;\n  background: rgba(255, 255, 255, .62); border-radius: calc(2 * var(--u)); min-height: 0; overflow: hidden;\n}\n.intercalaire .ligne { padding-left: 0; line-height: 1.6; font-size: min(calc(3.6 * var(--u)), calc(calc(121.6 * var(--u)) / var(--lignes, 1) / 1.9)); }\n.intercalaire .ligne__points { translate: 0 calc(-.6 * var(--u)); }\n.intercalaire .folio { color: var(--encre); }\n\n/* ---------- Loupe ---------- */\n.loupe {\n  position: fixed; inset: 0; z-index: 100; display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 10px;\n  padding-top: max(10px, env(safe-area-inset-top, 0px));\n  background: var(--table); color: var(--texte);\n}\n.loupe > .barre { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }\n.loupe__zone { overflow: auto; overscroll-behavior: contain; padding: 4px 16px max(24px, env(safe-area-inset-bottom, 0px)); display: grid; gap: 16px; justify-content: safe center; align-content: start; }\n.loupe__zone canvas { display: block; background: var(--papier); box-shadow: 0 6px 18px -4px var(--ombre); filter: brightness(var(--voile-page)); }\n\n/* ---------- Petits écrans ---------- */\n@media (max-width: 560px) {\n  .app { gap: 8px; padding-block: 8px; }\n  /* Le nom du classeur est déjà sur la page de garde : on laisse la place aux boutons. */\n  .app > .barre--haut .nom { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }\n  .app > .barre--haut .outils { flex: 1 1 auto; justify-content: space-between; }\n  .bouton { padding: 0 12px; }\n}\n@media (prefers-reduced-motion: reduce) {\n  .onglet { transition: none; }\n}\n\n/* ---------- Couleurs de classeur ---------- */\n:root[data-couleur=\"rouge\"], .dos[data-couleur=\"rouge\"] { --carton: #b23a3a; --carton-bord: #7e2323; }\n:root[data-couleur=\"vert\"], .dos[data-couleur=\"vert\"] { --carton: #2f7a55; --carton-bord: #1d5239; }\n:root[data-couleur=\"violet\"], .dos[data-couleur=\"violet\"] { --carton: #6a4aa0; --carton-bord: #47307a; }\n:root[data-couleur=\"orange\"], .dos[data-couleur=\"orange\"] { --carton: #cf7428; --carton-bord: #9c5216; }\n:root[data-couleur=\"gris\"], .dos[data-couleur=\"gris\"] { --carton: #4b5563; --carton-bord: #2c333d; }\n.dos[data-couleur=\"bleu\"] { --carton: #2a4a9c; --carton-bord: #1b3273; }\n\n/* ---------- Étagère ---------- */\n.est-etagere .barre--bas, .est-etagere #btn-sommaire, .est-etagere #btn-loupe { display: none; }\n.est-etagere .table { place-items: start center; overflow-y: auto; align-content: start; gap: 18px; padding-block: 8px 24px; }\n.etagere {\n  width: min(100%, 980px); display: grid; gap: 22px;\n  grid-template-columns: repeat(auto-fill, minmax(150px, 180px)); justify-content: center;\n}\n.dos {\n  position: relative; display: grid; place-items: center; aspect-ratio: 3 / 4; padding: 14% 10% 14% 20%;\n  border-radius: 6px 10px 10px 6px; text-decoration: none; color: var(--encre);\n  background: linear-gradient(90deg, var(--carton-bord) 0 9%, rgba(255, 255, 255, .12) 9% 9.6%, var(--carton) 9.6%);\n  box-shadow: 0 1px 0 rgba(255, 255, 255, .25) inset, 0 12px 22px -10px var(--ombre), 0 2px 4px var(--ombre);\n  transition: translate .15s ease, box-shadow .15s ease;\n}\n.dos:hover, .dos:focus-visible { translate: 0 -4px; box-shadow: 0 18px 26px -12px var(--ombre), 0 2px 4px var(--ombre); }\n.dos__anneaux {\n  position: absolute; left: 3.5%; top: 18%; bottom: 18%; width: 3%;\n  background: radial-gradient(circle, #e9ecf1 0 45%, transparent 50%) 0 0 / 100% 33.3% repeat-y;\n}\n.dos__etiquette {\n  width: 100%; display: grid; gap: 4px; justify-items: center; text-align: center;\n  padding: 12px 8px 10px; background: var(--papier); border-radius: 6px; rotate: -1.5deg;\n  box-shadow: 0 3px 8px rgba(0, 0, 0, .25);\n}\n.dos__nom { font-family: var(--ecriture); font-size: 1.35rem; line-height: 1.5; overflow-wrap: anywhere; }\n.dos__titre { font-size: .82rem; color: var(--encre-douce); line-height: 1.25; }\n.dos__compte { font-size: .78rem; font-weight: 700; color: var(--encre-douce); }\n@media (prefers-reduced-motion: reduce) { .dos { transition: none; } }\n","README.md":"# Classeurs virtuels\n\nDes classeurs de mathématiques à feuilleter en ligne, un par classe : les fiches PDF (cours, méthodes, exercices…)\nsont rangées derrière des intercalaires, avec un sommaire, et les pages se tournent comme dans un vrai classeur.\nIls fonctionnent sur ordinateur, tablette et téléphone.\n\n## Tout se gère depuis la page de gestion\n\nOuvrir `gestion.html` (l'adresse du site suivie de `gestion.html`). On y peut :\n\n- créer un classeur par classe, choisir sa couleur, le titre et le sous-titre de sa page de garde ;\n- copier le lien à donner aux élèves de chaque classe ;\n- ajouter, renommer, ranger, déplacer ou supprimer des intercalaires et des fiches PDF ;\n- toucher **Publier** : tout est mis en ligne en une minute environ.\n\nLa première fois, la page demande une clé d'accès GitHub et explique comment la créer.\n\n## Liens\n\n- `…/classeur-virtuel/` : l'étagère avec tous les classeurs.\n- `…/classeur-virtuel/?classeur=6e-a` : directement le classeur d'une classe (lien affiché dans la page de gestion).\n\n## Rangement des fichiers\n\nLa page de gestion range tout elle-même :\n\n```\nclasseurs/1 - 6e A/reglages.json               page de garde et couleur de ce classeur\nclasseurs/1 - 6e A/1 - Cours/1 - Les fractions.pdf\nreglages.json                                   nom affiché sur toutes les pages de garde\n```\n\n`classeur.json` est écrit automatiquement à chaque mise en ligne : inutile de le modifier.\n\n## Mettre à jour l'application\n\n`gestion.html` contient une copie des fichiers de l'application (`node tools/assembler-gestion.mjs` la met à jour).\nQuand cette copie diffère de ce qui est en ligne, la page de gestion propose de l'installer à la prochaine publication.\nUne nouvelle `gestion.html` reçue s'installe depuis la page de gestion elle-même (« Installer une mise à jour reçue »).\n\n## Essayer sur son ordinateur\n\n```\nnode tools/construire-sommaire.mjs\npython3 -m http.server 8000\n```\n\nPuis ouvrir http://localhost:8000.\n\n## Composants utilisés\n\n[PDF.js](https://mozilla.github.io/pdf.js/) (Apache 2.0) pour afficher les PDF,\n[StPageFlip](https://github.com/Nodlik/StPageFlip) (MIT) pour l'effet de page tournée,\npolices Playwrite FR Moderne et Atkinson Hyperlegible (SIL OFL). Tout est hébergé avec le site :\naucune donnée n'est envoyée à un service extérieur, sauf les échanges de la page de gestion avec GitHub.\n","tools/construire-sommaire.mjs":"// Parcourt les classeurs et écrit classeur.json (la liste des classeurs, de leurs intercalaires et de leurs fiches).\n// Lancé automatiquement à chaque mise en ligne ; à la main : node tools/construire-sommaire.mjs\n//\n// Rangement attendu :\n//   classeurs/1 - 6e A/reglages.json          (page de garde de ce classeur, facultatif)\n//   classeurs/1 - 6e A/1 - Cours/1 - Les fractions.pdf\n// L'ancien rangement (pdf/1 - Cours/1 - Les fractions.pdf) reste lu, comme un classeur de plus.\nimport { readdir, readFile, writeFile } from 'node:fs/promises';\nimport { dirname, join } from 'node:path';\nimport { fileURLToPath, pathToFileURL } from 'node:url';\n\nconst racine = join(dirname(fileURLToPath(import.meta.url)), '..');\nconst tri = new Intl.Collator('fr', { numeric: true, sensitivity: 'base' });\n\n// \"02 - Méthodes\" -> \"Méthodes\" ; \"3_Exercices.pdf\" -> \"Exercices\"\nconst titre = (nom) =>\n  nom.replace(/\\.pdf$/i, '').replace(/^\\s*\\d+\\s*[-–—_.)]*\\s*/, '').replace(/_/g, ' ').trim().normalize('NFC') || nom;\n// \"6e A\" -> \"6e-a\" : sert dans le lien donné aux élèves (…/?classeur=6e-a)\nexport const lienDepuis = (nom) =>\n  nom.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'classeur';\n\nconst estPdf = (e) => e.isFile() && /\\.pdf$/i.test(e.name);\nconst lister = async (dossier) =>\n  (await readdir(dossier, { withFileTypes: true }).catch(() => []))\n    .filter((e) => !e.name.startsWith('.'))\n    .sort((a, b) => tri.compare(a.name, b.name));\nconst lireJson = async (chemin) => {\n  try { return JSON.parse(await readFile(chemin, 'utf8')); } catch { return {}; }\n};\n\nlet pdfjs = null;\ntry {\n  pdfjs = await import(pathToFileURL(join(racine, 'vendor/pdf.min.js')).href);\n  pdfjs.GlobalWorkerOptions.workerSrc = pathToFileURL(join(racine, 'vendor/pdf.worker.min.js')).href;\n} catch {\n  // Sans lecteur PDF ici, l'application comptera elle-même les pages à l'ouverture.\n}\n\nasync function compterPages(chemin) {\n  if (!pdfjs) return undefined;\n  try {\n    const tache = pdfjs.getDocument({ data: new Uint8Array(await readFile(chemin)), verbosity: 0 });\n    const doc = await tache.promise;\n    const n = doc.numPages;\n    await tache.destroy();\n    return n;\n  } catch (erreur) {\n    console.warn(`  ! illisible : ${chemin} (${erreur.message})`);\n    return null;\n  }\n}\n\nasync function fiches(dossier, relatif) {\n  const liste = [];\n  for (const e of (await lister(dossier)).filter(estPdf)) {\n    const pages = await compterPages(join(dossier, e.name));\n    if (pages === null) continue;\n    liste.push({ titre: titre(e.name), fichier: `${relatif}/${e.name}`, ...(pages ? { pages } : {}) });\n  }\n  return liste;\n}\n\nasync function lireClasseur(dossier, relatif) {\n  const rubriques = [];\n  for (const e of (await lister(dossier)).filter((x) => x.isDirectory())) {\n    const documents = await fiches(join(dossier, e.name), `${relatif}/${e.name}`);\n    if (documents.length) rubriques.push({ titre: titre(e.name), documents });\n  }\n  const isoles = await fiches(dossier, relatif);\n  if (isoles.length) rubriques.push({ titre: 'Autres documents', documents: isoles });\n  return rubriques;\n}\n\nconst general = await lireJson(join(racine, 'reglages.json'));\nconst classeurs = [];\nconst liensPris = new Set();\nconst ajouter = (nom, reglages, rubriques) => {\n  if (!rubriques.length) return;\n  let lien = lienDepuis(reglages.lien || nom);\n  for (let n = 2; liensPris.has(lien); n++) lien = `${lienDepuis(reglages.lien || nom)}-${n}`;\n  liensPris.add(lien);\n  classeurs.push({\n    lien,\n    nom,\n    titre: reglages.titre || 'Classeur de mathématiques',\n    sousTitre: reglages.sousTitre ?? nom,\n    couleur: reglages.couleur || 'bleu',\n    rubriques,\n  });\n};\n\nfor (const e of (await lister(join(racine, 'classeurs'))).filter((x) => x.isDirectory())) {\n  const dossier = join(racine, 'classeurs', e.name);\n  ajouter(titre(e.name), await lireJson(join(dossier, 'reglages.json')), await lireClasseur(dossier, `classeurs/${e.name}`));\n}\n// Ancien rangement : un seul classeur dans pdf/, réglé par reglages.json à la racine.\najouter(general.nom || 'Mon classeur', { titre: general.titre, sousTitre: general.sousTitre || '', lien: general.lien }, await lireClasseur(join(racine, 'pdf'), 'pdf'));\n\nconst sortie = {\n  enseignant: general.enseignant || '',\n  version: process.env.GITHUB_SHA || '',\n  classeurs,\n};\nawait writeFile(join(racine, 'classeur.json'), JSON.stringify(sortie, null, 2) + '\\n');\n\nconst nbFiches = classeurs.reduce((s, c) => s + c.rubriques.reduce((t, r) => t + r.documents.length, 0), 0);\nconsole.log(`classeur.json : ${classeurs.length} classeur(s), ${nbFiches} fiche(s).`);\n","tools/assembler-gestion.mjs":"// Range dans gestion.html la version actuelle des fichiers du classeur.\n// La page de gestion compare cette copie avec ce qui est en ligne et installe la différence à la prochaine publication.\n// À lancer après chaque modification de l'application : node tools/assembler-gestion.mjs\nimport { readFile, writeFile } from 'node:fs/promises';\nimport { dirname, join } from 'node:path';\nimport { fileURLToPath } from 'node:url';\n\nconst racine = join(dirname(fileURLToPath(import.meta.url)), '..');\nconst FICHIERS = ['index.html', 'app.js', 'style.css', 'README.md', 'tools/construire-sommaire.mjs', 'tools/assembler-gestion.mjs'];\n\nconst contenu = {};\nfor (const f of FICHIERS) contenu[f] = await readFile(join(racine, f), 'utf8');\n// Les « \u003c » sont écrits \\u003c pour que ce texte ne puisse pas fermer la balise \u003cscript> qui le contient.\nconst json = JSON.stringify(contenu).replace(/\u003c/g, '\\\\u003c');\n\nconst chemin = join(racine, 'gestion.html');\nconst page = await readFile(chemin, 'utf8');\nconst motif = /(\u003cscript type=\"application\\/json\" id=\"mise-a-jour\">)[\\s\\S]*?(\u003c\\/script>)/;\nif (!motif.test(page)) throw new Error('Bloc « mise-a-jour » introuvable dans gestion.html');\nawait writeFile(chemin, page.replace(motif, (_, debut, fin) => debut + json + fin));\nconsole.log(`gestion.html : ${FICHIERS.length} fichiers rangés (${Math.round(json.length / 1024)} Ko).`);\n"}</script>
 
 <script type="module">
 import * as pdfjs from './vendor/pdf.min.js';
@@ -265,27 +300,26 @@ const icone = (d) => {
 const ICONES = {
   haut: '<path d="M5 12.5 10 7.5l5 5"/>',
   bas: '<path d="m5 7.5 5 5 5-5"/>',
+  gauche: '<path d="M12.5 5 7.5 10l5 5"/>',
+  droite: '<path d="m7.5 5 5 5-5 5"/>',
   deplacer: '<path d="M4 7h11m-3-3 3 3-3 3M16 13H5m3 3-3-3 3-3"/>',
   suppr: '<path d="M4.5 6h11M8 6V4.5h4V6m-6 0 .7 9.5h6.6L14 6"/>',
   plus: '<path d="M10 4v12M4 10h12"/>',
 };
+const COULEURS = [['bleu', 'Bleu'], ['rouge', 'Rouge'], ['vert', 'Vert'], ['violet', 'Violet'], ['orange', 'Orange'], ['gris', 'Gris']];
 const pluriel = (n, un, plusieurs = un + 's') => `${n} ${n > 1 ? plusieurs : un}`;
 const lire = (k) => { try { return localStorage.getItem(k); } catch { return null; } };
 const ecrire = (k, v) => { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch { /* stockage indisponible */ } };
 const tri = new Intl.Collator('fr', { numeric: true, sensitivity: 'base' });
 
-// Même règle que tools/construire-sommaire.mjs : « 2 - Les fractions.pdf » s'affiche « Les fractions ».
+// Mêmes règles que tools/construire-sommaire.mjs.
 const titreDepuis = (nom) =>
   nom.replace(/\.pdf$/i, '').replace(/^\s*\d+\s*[-–—_.)]*\s*/, '').replace(/_/g, ' ').trim().normalize('NFC') || nom;
+const lienDepuis = (nom) =>
+  nom.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'classeur';
 const nomDeFichier = (t) =>
   t.normalize('NFC').replace(/[\/\\*?"<>|\u0000-\u001f]/g, '-').replace(/\s+/g, ' ').trim().slice(0, 120) || 'Sans titre';
 
-const texteEnBase64 = (s) => {
-  const octets = new TextEncoder().encode(s);
-  let b = '';
-  for (let i = 0; i < octets.length; i += 0x8000) b += String.fromCharCode(...octets.subarray(i, i + 0x8000));
-  return btoa(b);
-};
 const base64EnTexte = (b64) => new TextDecoder().decode(Uint8Array.from(atob(b64.replace(/\s/g, '')), (c) => c.charCodeAt(0)));
 const fichierEnBase64 = (f) => new Promise((ok, ko) => {
   const r = new FileReader();
@@ -293,6 +327,14 @@ const fichierEnBase64 = (f) => new Promise((ok, ko) => {
   r.onerror = () => ko(r.error);
   r.readAsDataURL(f);
 });
+// Identifiant qu'aurait ce texte dans GitHub : sert à savoir si la version en ligne est déjà la bonne.
+async function empreinteGit(texte) {
+  const octets = new TextEncoder().encode(texte);
+  const entete = new TextEncoder().encode(`blob ${octets.length}\0`);
+  const tout = new Uint8Array(entete.length + octets.length);
+  tout.set(entete); tout.set(octets, entete.length);
+  return [...new Uint8Array(await crypto.subtle.digest('SHA-1', tout))].map((b) => b.toString(16).padStart(2, '0')).join('');
+}
 
 /* ---------- Le dépôt GitHub derrière ce site ---------- */
 const enLocal = ['localhost', '127.0.0.1'].includes(location.hostname);
@@ -306,6 +348,7 @@ function trouverDepot() {
   return { proprio: m[1], nom };
 }
 const DEPOT = trouverDepot();
+const ADRESSE_SITE = new URL('./', location.href).href;
 
 class ErreurGitHub extends Error {
   constructor(statut, texte) { super(`GitHub ${statut}`); this.statut = statut; this.texte = texte; }
@@ -327,22 +370,26 @@ async function gh(chemin, { methode = 'GET', corps } = {}) {
 }
 
 /* ---------- État ---------- */
-let base = null;              // { branche, commit, arbre } : la version en ligne au chargement
-let initiaux = new Map();     // chemin du PDF -> identifiant GitHub du fichier
-let reglagesInitiaux = {};
-let reglages = {};
-let rubriques = [];
+const MISE_A_JOUR = JSON.parse($('mise-a-jour').textContent || '{}');
+const CLES_ANCIENNES = ['titre', 'sousTitre', 'nom', 'lien', 'couleur']; // réglages de l'ancien classeur unique
+let base = null;                 // { branche, commit, arbre } : la version en ligne au chargement
+let initiaux = new Map();        // chemin d'un PDF -> identifiant GitHub
+let textesInitiaux = new Map();  // chemin d'un reglages.json -> texte
+let general = {};                // reglages.json à la racine
+let classeurs = [];
+let courant = 0;
+let codeAInstaller = new Map();  // chemin -> nouveau texte
 let signatureInitiale = '';
 let pagesConnues = new Map();
 let publication = false;
 let nId = 0;
 const nouvelId = () => ++nId;
-const CHAMPS_REGLAGES = ['titre', 'sousTitre', 'enseignant'];
 
 function montrer(ecran, message) {
   for (const e of ['chargement', 'connexion', 'gestion', 'erreur']) $(`ecran-${e}`).hidden = e !== ecran;
   if (ecran === 'erreur') $('ecran-erreur').textContent = message;
 }
+const lireJson = (texte) => { try { const o = JSON.parse(texte); return o && typeof o === 'object' ? o : {}; } catch { return {}; } };
 
 async function charger() {
   const repo = await gh('');
@@ -352,41 +399,93 @@ async function charger() {
   const commit = await gh(`/git/commits/${ref.object.sha}`);
   const arbre = await gh(`/git/trees/${commit.tree.sha}?recursive=1`);
   base = { branche, commit: ref.object.sha, arbre: commit.tree.sha };
+  const blobs = new Map(arbre.tree.filter((e) => e.type === 'blob').map((e) => [e.path, e.sha]));
+  const texteDe = async (chemin) => base64EnTexte((await gh(`/git/blobs/${blobs.get(chemin)}`)).content);
 
+  // Réglages communs
+  textesInitiaux = new Map();
+  general = {};
+  if (blobs.has('reglages.json')) {
+    const t = await texteDe('reglages.json');
+    textesInitiaux.set('reglages.json', t);
+    general = lireJson(t);
+  }
+
+  // Les PDF, rangés par classeur puis par intercalaire
   initiaux = new Map();
-  const dossiers = new Map();
-  for (const e of arbre.tree) {
-    if (e.type !== 'blob' || !/^pdf\/.+\.pdf$/i.test(e.path)) continue;
-    const parties = e.path.split('/');
-    if (parties.length > 3) continue;
-    const dossier = parties.length === 3 ? parties[1] : '';
-    initiaux.set(e.path, e.sha);
-    if (!dossiers.has(dossier)) dossiers.set(dossier, []);
-    dossiers.get(dossier).push({ nom: parties[parties.length - 1], chemin: e.path, sha: e.sha, taille: e.size });
+  const dossiers = new Map(); // clé du classeur -> { dossier, reglagesChemin, rubriques: Map }
+  const classeurDe = (cleC) => {
+    if (!dossiers.has(cleC)) dossiers.set(cleC, { rubriques: new Map(), reglagesChemin: null });
+    return dossiers.get(cleC);
+  };
+  for (const [chemin, sha] of blobs) {
+    let m = /^classeurs\/([^/]+)\/reglages\.json$/.exec(chemin);
+    if (m) { classeurDe(m[1]).reglagesChemin = chemin; continue; }
+    if (!/\.pdf$/i.test(chemin)) continue;
+    let cleC, reste;
+    if ((m = /^classeurs\/([^/]+)\/(.+)$/.exec(chemin))) { cleC = m[1]; reste = m[2]; }
+    else if ((m = /^pdf\/(.+)$/.exec(chemin))) { cleC = '\u0000ancien'; reste = m[1]; }
+    else continue;
+    const parties = reste.split('/');
+    if (parties.length > 2) continue;
+    const rub = parties.length === 2 ? parties[0] : '';
+    const c = classeurDe(cleC);
+    if (!c.rubriques.has(rub)) c.rubriques.set(rub, []);
+    c.rubriques.get(rub).push({ nom: parties[parties.length - 1], chemin, sha });
+    initiaux.set(chemin, sha);
   }
-  const ordre = [...dossiers.keys()].sort((a, b) => (a === '' ? 1 : b === '' ? -1 : tri.compare(a, b)));
-  rubriques = ordre.map((d) => {
-    const r = { id: nouvelId(), nom: d ? titreDepuis(d) : 'Autres documents', supprimee: false };
-    r.nomInitial = r.nom;
-    r.fiches = dossiers.get(d).sort((a, b) => tri.compare(a.nom, b.nom)).map((f) => {
-      const titre = titreDepuis(f.nom);
-      return { id: nouvelId(), titre, titreInitial: titre, rubriqueInitiale: r.id, chemin: f.chemin, sha: f.sha, taille: f.taille, supprimee: false };
-    });
-    return r;
-  });
 
-  reglagesInitiaux = {};
-  const fichierReglages = arbre.tree.find((e) => e.path === 'reglages.json');
-  if (fichierReglages) {
-    try { reglagesInitiaux = JSON.parse(base64EnTexte((await gh(`/git/blobs/${fichierReglages.sha}`)).content)); } catch { /* illisible : on repart de zéro */ }
+  classeurs = [];
+  const cles = [...dossiers.keys()].sort((a, b) => (a === '\u0000ancien' ? 1 : b === '\u0000ancien' ? -1 : tri.compare(a, b)));
+  for (const cleC of cles) {
+    const d = dossiers.get(cleC);
+    let reglages;
+    let nom;
+    if (cleC === '\u0000ancien') {
+      nom = general.nom || 'Mon classeur';
+      reglages = { titre: general.titre, sousTitre: general.sousTitre, couleur: general.couleur, lien: general.lien };
+    } else {
+      nom = titreDepuis(cleC);
+      reglages = {};
+      if (d.reglagesChemin) {
+        const t = await texteDe(d.reglagesChemin);
+        textesInitiaux.set(d.reglagesChemin, t);
+        reglages = lireJson(t);
+      }
+    }
+    const c = {
+      id: nouvelId(), nom, nomInitial: nom, supprime: false, existant: true,
+      reglages: { titre: reglages.titre || '', sousTitre: reglages.sousTitre || '', couleur: reglages.couleur || 'bleu', lien: reglages.lien || '' },
+    };
+    c.reglagesInitiaux = JSON.stringify(c.reglages);
+    const ordre = [...d.rubriques.keys()].sort((a, b) => (a === '' ? 1 : b === '' ? -1 : tri.compare(a, b)));
+    c.rubriques = ordre.map((rub) => {
+      const r = { id: nouvelId(), nom: rub ? titreDepuis(rub) : 'Autres documents', supprimee: false };
+      r.nomInitial = r.nom;
+      r.fiches = d.rubriques.get(rub).sort((a, b) => tri.compare(a.nom, b.nom)).map((f) => {
+        const titre = titreDepuis(f.nom);
+        return { id: nouvelId(), titre, titreInitial: titre, rubriqueInitiale: r.id, chemin: f.chemin, sha: f.sha, supprimee: false };
+      });
+      return r;
+    });
+    classeurs.push(c);
   }
-  reglages = { ...reglagesInitiaux };
-  for (const k of CHAMPS_REGLAGES) $(`r-${k}`).value = reglages[k] || '';
+  if (!classeurs.length) classeurs.push(nouveauClasseur('Ma classe'));
+  courant = Math.max(0, Math.min(classeurs.length - 1, Number(lire('classeur-courant')) || 0));
+  $('r-enseignant').value = general.enseignant || '';
+
+  // Nouvelle version de l'application à installer ?
+  codeAInstaller = new Map();
+  for (const [chemin, texte] of Object.entries(MISE_A_JOUR)) {
+    if (blobs.get(chemin) !== await empreinteGit(texte)) codeAInstaller.set(chemin, texte);
+  }
+  $('bandeau-maj').hidden = !codeAInstaller.size;
 
   try {
     const c = await (await fetch(`classeur.json?v=${Date.now()}`, { cache: 'no-store' })).json();
     pagesConnues = new Map();
-    for (const r of c.rubriques || []) for (const d of r.documents || []) if (d.pages) pagesConnues.set(d.fichier.normalize('NFC'), d.pages);
+    const liste = Array.isArray(c.classeurs) ? c.classeurs : [c];
+    for (const cl of liste) for (const r of cl.rubriques || []) for (const d of r.documents || []) if (d.pages) pagesConnues.set(d.fichier.normalize('NFC'), d.pages);
   } catch { /* le nombre de pages est un simple confort */ }
 
   signatureInitiale = signature();
@@ -394,61 +493,89 @@ async function charger() {
   montrer('gestion');
 }
 
+function nouveauClasseur(nom) {
+  const c = { id: nouvelId(), nom, nomInitial: null, supprime: false, existant: false, rubriques: [] };
+  c.reglages = { titre: 'Classeur de mathématiques', sousTitre: '', couleur: COULEURS[classeurs.length % COULEURS.length][0], lien: '' };
+  c.reglagesInitiaux = '';
+  return c;
+}
+
 /* ---------- Ce qui a changé ---------- */
 const actives = (r) => r.fiches.filter((f) => !f.supprimee);
-const reglagesPropres = () => {
-  const r = { ...reglages };
-  for (const k of CHAMPS_REGLAGES) { r[k] = (r[k] || '').trim(); if (!r[k]) delete r[k]; }
-  return r;
+const rubriquesActives = (c) => c.rubriques.filter((r) => !r.supprimee && actives(r).length);
+const publiable = (c) => !c.supprime && rubriquesActives(c).length > 0;
+const generalPropre = () => {
+  const g = { ...general };
+  for (const k of CLES_ANCIENNES) delete g[k];
+  const nom = (g.enseignant || '').trim();
+  if (nom) g.enseignant = nom; else delete g.enseignant;
+  return g;
 };
-const reglagesModifies = () => JSON.stringify(reglagesPropres()) !== JSON.stringify((() => {
-  const r = { ...reglagesInitiaux };
-  for (const k of CHAMPS_REGLAGES) { r[k] = (r[k] || '').trim(); if (!r[k]) delete r[k]; }
-  return r;
-})());
 
 function signature() {
   return JSON.stringify({
-    r: rubriques.filter((r) => !r.supprimee && actives(r).length).map((r) => [r.nom.trim(), actives(r).map((f) => [f.id, f.titre.trim()])]),
-    g: reglagesPropres(),
+    c: classeurs.filter(publiable).map((c) => [c.nom.trim(), c.reglages, rubriquesActives(c).map((r) => [r.nom.trim(), actives(r).map((f) => [f.id, f.titre.trim()])])]),
+    g: (general.enseignant || '').trim(),
   });
 }
 
 function resume() {
-  if (signature() === signatureInitiale) return [];
-  let ajouts = 0, suppressions = 0, renommees = 0, deplacees = 0, intercalaires = false;
-  for (const r of rubriques) {
-    if (r.supprimee) { if (r.nomInitial != null) intercalaires = true; }
-    else if (r.nom.trim() !== (r.nomInitial ?? '') && actives(r).length) intercalaires = true;
-    for (const f of r.fiches) {
-      const retiree = f.supprimee || r.supprimee;
-      if (f.fichier) { if (!retiree) ajouts++; continue; }
-      if (retiree) { suppressions++; continue; }
-      if (f.titre.trim() !== f.titreInitial) renommees++;
-      if (r.id !== f.rubriqueInitiale) deplacees++;
-    }
-  }
   const morceaux = [];
-  if (ajouts) morceaux.push(`${pluriel(ajouts, 'fiche ajoutée', 'fiches ajoutées')}`);
-  if (suppressions) morceaux.push(`${pluriel(suppressions, 'fiche supprimée', 'fiches supprimées')}`);
-  if (renommees) morceaux.push(`${pluriel(renommees, 'fiche renommée', 'fiches renommées')}`);
-  if (deplacees) morceaux.push(`${pluriel(deplacees, 'fiche déplacée', 'fiches déplacées')}`);
-  if (intercalaires) morceaux.push('intercalaires modifiés');
-  if (reglagesModifies()) morceaux.push('page de garde modifiée');
-  if (!morceaux.length) morceaux.push('ordre modifié');
+  if (signature() !== signatureInitiale) {
+    let ajouts = 0, suppressions = 0, renommees = 0, deplacees = 0, intercalaires = false, gardes = false, listeClasseurs = false;
+    for (const c of classeurs) {
+      if (c.supprime) { if (c.existant) listeClasseurs = true; }
+      else if (!c.existant && publiable(c)) listeClasseurs = true;
+      else if (c.existant && (c.nom.trim() !== c.nomInitial)) listeClasseurs = true;
+      if (!c.supprime && c.existant && JSON.stringify(c.reglages) !== c.reglagesInitiaux) gardes = true;
+      for (const r of c.rubriques) {
+        if (r.supprimee) { if (r.nomInitial != null) intercalaires = true; }
+        else if (r.nom.trim() !== (r.nomInitial ?? '') && actives(r).length) intercalaires = true;
+        for (const f of r.fiches) {
+          const retiree = f.supprimee || r.supprimee || c.supprime;
+          if (f.fichier) { if (!retiree) ajouts++; continue; }
+          if (retiree) { suppressions++; continue; }
+          if (f.titre.trim() !== f.titreInitial) renommees++;
+          if (r.id !== f.rubriqueInitiale) deplacees++;
+        }
+      }
+    }
+    if (listeClasseurs) morceaux.push('classeurs modifiés');
+    if (ajouts) morceaux.push(pluriel(ajouts, 'fiche ajoutée', 'fiches ajoutées'));
+    if (suppressions) morceaux.push(pluriel(suppressions, 'fiche supprimée', 'fiches supprimées'));
+    if (renommees) morceaux.push(pluriel(renommees, 'fiche renommée', 'fiches renommées'));
+    if (deplacees) morceaux.push(pluriel(deplacees, 'fiche déplacée', 'fiches déplacées'));
+    if (intercalaires) morceaux.push('intercalaires modifiés');
+    if (gardes || (general.enseignant || '').trim() !== (lireJson(textesInitiaux.get('reglages.json') || '{}').enseignant || '').trim()) morceaux.push('page de garde modifiée');
+    if (!morceaux.length) morceaux.push('ordre modifié');
+  }
+  if (codeAInstaller.size) morceaux.push('nouvelle version des classeurs');
   return morceaux;
 }
 
-// Chemins voulus dans le dépôt : « pdf/2 - Méthodes/1 - Résoudre une équation.pdf ».
+// Ce que contiendra le dépôt : « classeurs/1 - 6e A/2 - Méthodes/1 - Résoudre une équation.pdf ».
 function plan() {
-  const voulus = new Map();
+  const pdfs = new Map();
+  const textes = new Map([['reglages.json', JSON.stringify(generalPropre(), null, 2) + '\n']]);
+  const liens = new Set();
   let i = 0;
-  for (const r of rubriques) {
-    if (r.supprimee || !actives(r).length) continue;
-    const dossier = `pdf/${++i} - ${nomDeFichier(r.nom)}`;
-    actives(r).forEach((f, j) => voulus.set(`${dossier}/${j + 1} - ${nomDeFichier(f.titre)}.pdf`, f));
+  for (const c of classeurs) {
+    if (!publiable(c)) continue;
+    const dossier = `classeurs/${++i} - ${nomDeFichier(c.nom)}`;
+    const voulu = lienDepuis(c.reglages.lien || c.nom);
+    let lien = voulu;
+    for (let n = 2; liens.has(lien); n++) lien = `${voulu}-${n}`;
+    liens.add(lien);
+    const r = { lien, couleur: c.reglages.couleur || 'bleu' };
+    if (c.reglages.titre.trim()) r.titre = c.reglages.titre.trim();
+    if (c.reglages.sousTitre.trim()) r.sousTitre = c.reglages.sousTitre.trim();
+    textes.set(`${dossier}/reglages.json`, JSON.stringify(r, null, 2) + '\n');
+    c.lienPrevu = lien;
+    rubriquesActives(c).forEach((rub, j) => {
+      actives(rub).forEach((f, k) => pdfs.set(`${dossier}/${j + 1} - ${nomDeFichier(rub.nom)}/${k + 1} - ${nomDeFichier(f.titre)}.pdf`, f));
+    });
   }
-  return voulus;
+  return { pdfs, textes };
 }
 
 /* ---------- Affichage ---------- */
@@ -456,23 +583,95 @@ function boutonIcone(nom, libelle, action, { desactive = false, classe = '' } = 
   return el('button', { type: 'button', class: `icone ${classe}`, 'aria-label': libelle, title: libelle, disabled: desactive, onclick: action }, icone(ICONES[nom]));
 }
 function echanger(liste, i, j) { [liste[i], liste[j]] = [liste[j], liste[i]]; dessiner(); }
+const classeurCourant = () => classeurs[courant];
+function choisir(i) { courant = i; ecrire('classeur-courant', String(i)); dessiner(); }
 
-function dessiner() {
-  const zone = $('rubriques');
-  const garder = document.activeElement && document.activeElement.dataset.cle;
+function dessinerChoix() {
+  const nav = $('choix-classeurs');
+  nav.textContent = '';
+  classeurs.forEach((c, i) => {
+    nav.append(el('button', {
+      type: 'button', class: `puce k-${c.reglages.couleur}${c.supprime ? ' est-supprimee' : ''}`, 'aria-pressed': String(i === courant),
+      onclick: () => choisir(i),
+    }, el('span', { class: 'puce__pastille' }), el('span', {}, c.nom.trim() || 'Sans nom')));
+  });
+  nav.append(el('button', {
+    type: 'button', class: 'puce puce--ajout',
+    onclick: () => {
+      classeurs.push(nouveauClasseur('Nouvelle classe'));
+      choisir(classeurs.length - 1);
+      const champ = $('c-nom');
+      champ.focus();
+      champ.select();
+    },
+  }, icone(ICONES.plus), 'Nouveau classeur'));
+}
+
+function dessinerClasseur() {
+  const c = classeurCourant();
+  const zone = $('classeur-courant');
   zone.textContent = '';
+  const i = courant;
+  const lienEnLigne = c.existant && c.reglages.lien ? `${ADRESSE_SITE}?classeur=${encodeURIComponent(c.reglages.lien)}` : null;
+  const champLien = lienEnLigne ? el('input', { readOnly: true, value: lienEnLigne, 'aria-label': 'Lien pour les élèves', onfocus: (e) => e.target.select() }) : null;
+
+  zone.append(el('section', { class: `carte classeur-carte k-${c.reglages.couleur}` },
+    el('div', { class: 'classeur-carte__haut' },
+      el('h2', {}, c.supprime ? 'Ce classeur sera supprimé à la publication' : 'Ce classeur'),
+      c.supprime ? el('button', { type: 'button', class: 'bouton restaurer', onclick: () => { c.supprime = false; dessiner(); } }, 'Restaurer') : el('div', { class: 'outils' },
+        boutonIcone('gauche', 'Placer ce classeur plus tôt', () => { echanger(classeurs, i, i - 1); choisir(i - 1); }, { desactive: i === 0 }),
+        boutonIcone('droite', 'Placer ce classeur plus loin', () => { echanger(classeurs, i, i + 1); choisir(i + 1); }, { desactive: i === classeurs.length - 1 }),
+        boutonIcone('suppr', `Supprimer le classeur « ${c.nom} » et toutes ses fiches`, () => {
+          if (!c.existant && c.rubriques.every((r) => r.fiches.every((f) => f.fichier))) { classeurs.splice(i, 1); if (!classeurs.length) classeurs.push(nouveauClasseur('Ma classe')); choisir(Math.max(0, i - 1)); }
+          else { c.supprime = true; dessiner(); }
+        }, { classe: 'icone--suppr' }))),
+    c.supprime ? null : el('div', { class: 'deux' },
+      el('label', { class: 'champ' }, el('span', {}, 'Nom de la classe'),
+        el('input', { id: 'c-nom', value: c.nom, placeholder: '6e A', oninput: (e) => { c.nom = e.target.value; majBarre(); dessinerChoixSeul(); } })),
+      el('label', { class: 'champ' }, el('span', {}, 'Titre de la page de garde'),
+        el('input', { id: 'c-titre', value: c.reglages.titre, placeholder: 'Classeur de mathématiques', oninput: (e) => { c.reglages.titre = e.target.value; majBarre(); } })),
+      el('label', { class: 'champ' }, el('span', {}, 'Sous-titre de la page de garde'),
+        el('input', { id: 'c-sousTitre', value: c.reglages.sousTitre, placeholder: c.nom || 'Cours, méthodes et exercices', oninput: (e) => { c.reglages.sousTitre = e.target.value; majBarre(); } }))),
+    c.supprime ? null : el('fieldset', { class: 'couleurs' }, el('legend', {}, 'Couleur du classeur'),
+      COULEURS.map(([valeur, libelle]) => el('label', { class: `couleur k-${valeur}`, title: libelle },
+        el('input', {
+          type: 'radio', name: 'couleur', value: valeur, checked: c.reglages.couleur === valeur, 'aria-label': libelle,
+          onchange: () => { c.reglages.couleur = valeur; dessiner(); },
+        })))),
+    c.supprime ? null : el('div', { class: 'champ' }, el('span', {}, 'Lien à donner aux élèves de cette classe'),
+      lienEnLigne
+        ? el('div', { class: 'lien-eleves' }, champLien, el('button', {
+          type: 'button', class: 'bouton', onclick: async (e) => {
+            try { await navigator.clipboard.writeText(lienEnLigne); e.target.textContent = 'Copié'; }
+            catch { champLien.focus(); champLien.select(); e.target.textContent = 'Lien sélectionné : copiez-le'; }
+          },
+        }, 'Copier le lien'))
+        : el('p', { class: 'note', style: 'margin: 0' }, 'Le lien sera créé quand vous publierez ce classeur avec au moins une fiche.'))));
+}
+// Met à jour le nom sur la puce sans redessiner le champ en cours de saisie.
+function dessinerChoixSeul() {
+  const puce = $('choix-classeurs').children[courant];
+  if (puce) puce.lastChild.textContent = classeurCourant().nom.trim() || 'Sans nom';
+}
+
+function dessinerRubriques() {
+  const c = classeurCourant();
+  const zone = $('rubriques');
+  zone.textContent = '';
+  $('nouvel-intercalaire').hidden = c.supprime;
+  if (c.supprime) return;
   let rang = 0;
-  rubriques.forEach((r, ri) => {
+  c.rubriques.forEach((r, ri) => {
     const couleur = r.supprimee ? 'c0' : `c${(rang++ % 6) + 1}`;
-    const autres = rubriques.filter((x) => x !== r && !x.supprimee);
+    const autres = c.rubriques.filter((x) => x !== r && !x.supprimee);
 
     const outilsRubrique = r.supprimee
       ? el('button', { type: 'button', class: 'bouton restaurer', onclick: () => { r.supprimee = false; dessiner(); } }, 'Restaurer')
       : el('div', { class: 'outils' },
-        boutonIcone('haut', "Monter l'intercalaire", () => echanger(rubriques, ri, ri - 1), { desactive: ri === 0 }),
-        boutonIcone('bas', "Descendre l'intercalaire", () => echanger(rubriques, ri, ri + 1), { desactive: ri === rubriques.length - 1 }),
+        boutonIcone('haut', "Monter l'intercalaire", () => echanger(c.rubriques, ri, ri - 1), { desactive: ri === 0 }),
+        boutonIcone('bas', "Descendre l'intercalaire", () => echanger(c.rubriques, ri, ri + 1), { desactive: ri === c.rubriques.length - 1 }),
         boutonIcone('suppr', `Supprimer l'intercalaire « ${r.nom} » et ses fiches`, () => {
-          if (r.fiches.every((f) => f.fichier) && r.nomInitial == null) rubriques.splice(ri, 1);
+          if (r.fiches.every((f) => f.fichier) && r.nomInitial == null) c.rubriques.splice(ri, 1);
           else r.supprimee = true;
           dessiner();
         }, { classe: 'icone--suppr' }));
@@ -543,7 +742,15 @@ function dessiner() {
         r.supprimee ? el('p', { class: 'vide' }, `Cet intercalaire et ses ${pluriel(r.fiches.length, 'fiche')} seront supprimés à la publication.`) : null,
         ajout)));
   });
-  if (garder) zone.querySelector(`[data-cle="${garder}"]`)?.focus();
+  if (!c.rubriques.length) zone.append(el('p', { class: 'carte note', style: 'margin: 0' }, 'Ce classeur est vide. Touchez « Nouvel intercalaire » pour commencer (par exemple « Cours »), puis ajoutez-y des fiches.'));
+}
+
+function dessiner() {
+  const garder = document.activeElement && document.activeElement.dataset.cle;
+  dessinerChoix();
+  dessinerClasseur();
+  dessinerRubriques();
+  if (garder) document.querySelector(`[data-cle="${garder}"]`)?.focus();
   majBarre();
 }
 
@@ -552,7 +759,7 @@ async function ajouterFichiers(r, fichiers) {
     const f = { id: nouvelId(), titre: titreDepuis(fichier.name), fichier, supprimee: false, pages: null };
     if (!/\.pdf$/i.test(fichier.name) && fichier.type !== 'application/pdf') f.erreur = "Ce fichier n'est pas un PDF.";
     else if (fichier.size > 95e6) f.erreur = 'Fichier trop lourd (95 Mo au maximum).';
-    else if (fichier.size > 20e6) f.avertissement = 'fichier lourd : il s\'affichera lentement sur téléphone';
+    else if (fichier.size > 20e6) f.avertissement = "fichier lourd : il s'affichera lentement sur téléphone";
     r.fiches.push(f);
   }
   dessiner();
@@ -562,7 +769,7 @@ async function ajouterFichiers(r, fichiers) {
       f.pages = (await tache.promise).numPages;
       tache.destroy();
     } catch {
-      f.erreur = "Ce PDF est illisible ou protégé par un mot de passe.";
+      f.erreur = 'Ce PDF est illisible ou protégé par un mot de passe.';
     }
     dessiner();
   }
@@ -579,30 +786,34 @@ function majBarre() {
   if (publication) return;
   const changements = resume();
   if (!changements.length) { $('barre').hidden = true; return; }
-  const fiches = rubriques.filter((r) => !r.supprimee).flatMap(actives);
+  const fiches = classeurs.filter((c) => !c.supprime).flatMap((c) => c.rubriques.filter((r) => !r.supprimee).flatMap(actives));
   const enErreur = fiches.filter((f) => f.erreur).length;
   const enCours = fiches.filter((f) => f.fichier && f.pages == null && !f.erreur).length;
-  if (enErreur) etatBarre('À corriger avant de publier', `Supprimez ${pluriel(enErreur, 'le fichier marqué en rouge', 'les fichiers marqués en rouge')}.`, 'erreur');
-  else if (enCours) etatBarre('Vérification des fichiers…', 'Un instant.');
-  else etatBarre('Changements à publier', changements.join(', ') + '.');
+  if (enErreur) etatBarre('À corriger avant de publier', ` Supprimez ${pluriel(enErreur, 'le fichier marqué en rouge', 'les fichiers marqués en rouge')}.`, 'erreur');
+  else if (enCours) etatBarre('Vérification des fichiers…', ' Un instant.');
+  else etatBarre('Changements à publier', ' ' + changements.join(', ') + '.');
   $('publier').disabled = Boolean(enErreur || enCours);
   $('annuler').disabled = false;
 }
 
-async function attendreMiseEnLigne(voulus, avecReglages) {
-  const attendus = [...voulus].map((c) => c.normalize('NFC')).sort().join('\n');
+// Attend que le site en ligne ait été reconstruit avec cette version.
+async function attendreMiseEnLigne(version) {
   const debut = Date.now();
   while (Date.now() - debut < 6 * 60e3) {
     await new Promise((ok) => setTimeout(ok, 6000));
     try {
       const c = await (await fetch(`classeur.json?v=${Date.now()}`, { cache: 'no-store' })).json();
-      const enLigne = (c.rubriques || []).flatMap((r) => r.documents.map((d) => d.fichier.normalize('NFC'))).sort().join('\n');
-      const g = reglagesPropres();
-      const garde = !avecReglages || ((c.sousTitre || '') === (g.sousTitre || '') && (c.enseignant || '') === (g.enseignant || '') && (!g.titre || c.titre === g.titre));
-      if (enLigne === attendus && garde) return true;
+      if (c.version === version) return true;
     } catch { /* on réessaie */ }
   }
   return false;
+}
+
+async function envoyer(message, entrees) {
+  const arbre = await gh('/git/trees', { methode: 'POST', corps: { base_tree: base.arbre, tree: entrees } });
+  const commit = await gh('/git/commits', { methode: 'POST', corps: { message, tree: arbre.sha, parents: [base.commit] } });
+  await gh(`/git/refs/heads/${encodeURIComponent(base.branche)}`, { methode: 'PATCH', corps: { sha: commit.sha, force: false } });
+  return commit.sha;
 }
 
 async function publier() {
@@ -612,36 +823,32 @@ async function publier() {
   document.body.classList.add('occupe');
   $('publier').disabled = true;
   $('annuler').disabled = true;
-  const avecReglages = reglagesModifies();
   try {
-    const voulus = plan();
-    const nouvelles = [...voulus.values()].filter((f) => f.fichier && !f.blob);
+    const { pdfs, textes } = plan();
+    const nouvelles = [...pdfs.values()].filter((f) => f.fichier && !f.blob);
     for (let i = 0; i < nouvelles.length; i++) {
-      etatBarre('Envoi des fichiers…', `${i + 1} sur ${nouvelles.length}. Ne fermez pas cette page.`);
+      etatBarre('Envoi des fichiers…', ` ${i + 1} sur ${nouvelles.length}. Ne fermez pas cette page.`);
       nouvelles[i].blob = (await gh('/git/blobs', { methode: 'POST', corps: { content: await fichierEnBase64(nouvelles[i].fichier), encoding: 'base64' } })).sha;
     }
-    etatBarre('Enregistrement…', 'Ne fermez pas cette page.');
+    etatBarre('Enregistrement…', ' Ne fermez pas cette page.');
     const entrees = [];
-    for (const [chemin, f] of voulus) {
+    for (const [chemin, f] of pdfs) {
       const sha = f.sha || f.blob;
       if (initiaux.get(chemin) !== sha) entrees.push({ path: chemin, mode: '100644', type: 'blob', sha });
     }
-    for (const chemin of initiaux.keys()) if (!voulus.has(chemin)) entrees.push({ path: chemin, mode: '100644', type: 'blob', sha: null });
-    if (avecReglages) entrees.push({ path: 'reglages.json', mode: '100644', type: 'blob', content: JSON.stringify(reglagesPropres(), null, 2) + '\n' });
+    for (const chemin of initiaux.keys()) if (!pdfs.has(chemin)) entrees.push({ path: chemin, mode: '100644', type: 'blob', sha: null });
+    for (const [chemin, texte] of textes) if (textesInitiaux.get(chemin) !== texte) entrees.push({ path: chemin, mode: '100644', type: 'blob', content: texte });
+    for (const chemin of textesInitiaux.keys()) if (!textes.has(chemin)) entrees.push({ path: chemin, mode: '100644', type: 'blob', sha: null });
+    for (const [chemin, texte] of codeAInstaller) entrees.push({ path: chemin, mode: '100644', type: 'blob', content: texte });
 
-    if (entrees.length) {
-      const arbre = await gh('/git/trees', { methode: 'POST', corps: { base_tree: base.arbre, tree: entrees } });
-      const commit = await gh('/git/commits', { methode: 'POST', corps: { message: `Classeur : ${changements.join(', ')}`, tree: arbre.sha, parents: [base.commit] } });
-      await gh(`/git/refs/heads/${encodeURIComponent(base.branche)}`, { methode: 'PATCH', corps: { sha: commit.sha, force: false } });
-    }
-
-    etatBarre('Mise en ligne en cours…', 'Environ une minute. Vous pouvez fermer cette page, la mise en ligne continue toute seule.');
-    const enLigne = await attendreMiseEnLigne(voulus.keys(), avecReglages);
+    const version = entrees.length ? await envoyer(`Classeurs : ${changements.join(', ')}`, entrees) : base.commit;
+    etatBarre('Mise en ligne en cours…', ' Environ une minute. Vous pouvez fermer cette page, la mise en ligne continue toute seule.');
+    const enLigne = await attendreMiseEnLigne(version);
     publication = false;
     document.body.classList.remove('occupe');
     await charger();
     if (enLigne) etatBarre("C'est en ligne.", ' Les élèves voient la nouvelle version (ils devront peut-être recharger la page).', 'ok');
-    else etatBarre('Changements enregistrés.', ' La mise en ligne prend plus de temps que d\'habitude : vérifiez le classeur dans quelques minutes.', 'ok');
+    else etatBarre('Changements enregistrés.', " La mise en ligne prend plus de temps que d'habitude : vérifiez les classeurs dans quelques minutes.", 'ok');
     $('publier').disabled = true;
     $('annuler').disabled = true;
     setTimeout(() => { if (!publication && !resume().length) $('barre').hidden = true; }, 12000);
@@ -651,10 +858,34 @@ async function publier() {
     console.error(e);
     let message = "Rien n'a été modifié en ligne. Vérifiez la connexion internet, puis touchez Publier à nouveau.";
     if (e instanceof ErreurGitHub && e.statut === 401) message = "La clé d'accès n'est plus valide. Touchez « Retirer la clé de cet appareil », puis créez-en une nouvelle.";
-    else if (e instanceof ErreurGitHub && e.statut === 422 && /refs/.test(e.texte + '')) message = 'Le classeur a été modifié depuis un autre appareil. Rechargez la page et refaites vos changements.';
+    else if (e instanceof ErreurGitHub && e.statut === 422 && /fast forward|refs/i.test(e.texte + '')) message = 'Les classeurs ont été modifiés depuis un autre appareil. Rechargez la page et refaites vos changements.';
     etatBarre("La publication n'a pas abouti.", ' ' + message, 'erreur');
     $('publier').disabled = false;
     $('annuler').disabled = false;
+  }
+}
+
+// Mise à jour reçue sous forme d'un nouveau fichier gestion.html : on le met en ligne à la place de celui-ci.
+async function installerFichier(fichier) {
+  if (resume().some((m) => m !== 'nouvelle version des classeurs')) { alert("Publiez ou annulez d'abord vos changements en cours."); return; }
+  const texte = await fichier.text();
+  if (!/<title>Gérer le classeur<\/title>/.test(texte) || !/id="mise-a-jour"/.test(texte)) {
+    alert("Ce fichier n'est pas une mise à jour de la page de gestion.");
+    return;
+  }
+  publication = true;
+  document.body.classList.add('occupe');
+  try {
+    etatBarre('Installation de la mise à jour…', ' Ne fermez pas cette page.');
+    const version = await envoyer('Classeurs : mise à jour de la page de gestion', [{ path: 'gestion.html', mode: '100644', type: 'blob', content: texte }]);
+    etatBarre('Mise en ligne en cours…', ' Environ une minute. La page se rechargera toute seule.');
+    await attendreMiseEnLigne(version);
+    location.reload();
+  } catch (e) {
+    console.error(e);
+    publication = false;
+    document.body.classList.remove('occupe');
+    etatBarre("L'installation n'a pas abouti.", ' Vérifiez la connexion internet, puis réessayez.', 'erreur');
   }
 }
 
@@ -662,14 +893,14 @@ async function publier() {
 function messageErreur(e) {
   if (e instanceof ErreurGitHub) {
     if (e.statut === 401) return "Cette clé n'est pas valide ou a été supprimée. Créez-en une nouvelle avec le bouton ci-dessus.";
-    if (e.statut === 403 || e.statut === 404) return `Cette clé ne permet pas de modifier le classeur. Créez-la en étant connectée au compte « ${DEPOT.proprio} ».`;
+    if (e.statut === 403 || e.statut === 404) return `Cette clé ne permet pas de modifier les classeurs. Créez-la en étant connectée au compte « ${DEPOT.proprio} ».`;
     return `GitHub a répondu une erreur (${e.statut}). Réessayez dans un instant.`;
   }
   return 'Impossible de joindre GitHub. Vérifiez la connexion internet, puis réessayez.';
 }
 
 async function demarrer() {
-  if (!DEPOT) { montrer('erreur', "Ouvrez cette page depuis l'adresse du classeur en ligne (…github.io/…/gestion.html)."); return; }
+  if (!DEPOT) { montrer('erreur', "Ouvrez cette page depuis l'adresse des classeurs en ligne (…github.io/…/gestion.html)."); return; }
   if (!cle) { montrer('connexion'); return; }
   try {
     await charger();
@@ -719,14 +950,15 @@ $('deconnexion').addEventListener('click', () => {
 
 $('nouvel-intercalaire').addEventListener('click', () => {
   const r = { id: nouvelId(), nom: 'Nouvel intercalaire', nomInitial: null, fiches: [], supprimee: false };
-  rubriques.push(r);
+  classeurCourant().rubriques.push(r);
   dessiner();
   const champ = document.querySelector(`[data-cle="r${r.id}"]`);
   champ.focus();
   champ.select();
 });
 
-for (const k of CHAMPS_REGLAGES) $(`r-${k}`).addEventListener('input', (e) => { reglages[k] = e.target.value; majBarre(); });
+$('r-enseignant').addEventListener('input', (e) => { general.enseignant = e.target.value; majBarre(); });
+$('fichier-maj').addEventListener('change', (e) => { const f = e.target.files[0]; e.target.value = ''; if (f) installerFichier(f); });
 $('publier').addEventListener('click', publier);
 $('annuler').addEventListener('click', async () => {
   if (!confirm('Abandonner tous les changements non publiés ?')) return;
@@ -735,7 +967,7 @@ $('annuler').addEventListener('click', async () => {
   try { await charger(); } catch (e) { montrer('erreur', messageErreur(e)); }
 });
 addEventListener('beforeunload', (e) => {
-  if (publication || resume().length) { e.preventDefault(); e.returnValue = ''; }
+  if (publication || resume().some((m) => m !== 'nouvelle version des classeurs')) { e.preventDefault(); e.returnValue = ''; }
 });
 
 demarrer();
