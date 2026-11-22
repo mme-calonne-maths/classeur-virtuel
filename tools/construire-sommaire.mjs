@@ -72,6 +72,7 @@ async function lireClasseur(dossier, relatif) {
 }
 
 const general = await lireJson(join(racine, 'reglages.json'));
+const DATE = /^\d{4}-\d{2}-\d{2}$/; // période d'ouverture d'un classeur : « 2026-07-04 »
 const classeurs = [];
 const liensPris = new Set();
 const ajouter = (nom, reglages, rubriques) => {
@@ -85,6 +86,8 @@ const ajouter = (nom, reglages, rubriques) => {
     titre: reglages.titre || 'Classeur de mathématiques',
     sousTitre: reglages.sousTitre ?? nom,
     couleur: reglages.couleur || 'bleu',
+    ...(DATE.test(reglages.debut || '') ? { debut: reglages.debut } : {}),
+    ...(DATE.test(reglages.fin || '') ? { fin: reglages.fin } : {}),
     rubriques,
   });
 };

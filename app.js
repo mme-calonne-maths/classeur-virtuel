@@ -440,6 +440,14 @@ function zoomer(sens) {
   dessinerLoupe();
 }
 
+/* ---------- Période d'ouverture d'un classeur ---------- */
+function aujourdhui() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+const estOuvert = (c) => (!c.debut || aujourdhui() >= c.debut) && (!c.fin || aujourdhui() <= c.fin);
+const dateEnClair = (iso) => new Date(`${iso}T12:00:00`).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+
 /* ---------- Étagère : le choix du classeur quand il y en a plusieurs ---------- */
 function afficherEtagere(donnees, demande) {
   const titre = donnees.enseignant ? `Les classeurs de ${donnees.enseignant}` : 'Les classeurs';
@@ -509,13 +517,23 @@ async function demarrer() {
     };
   }
   const tous = donnees.classeurs;
+  const ouverts = tous.filter(estOuvert);
   const demande = new URLSearchParams(location.search).get('classeur');
-  const classeur = tous.find((c) => c.lien === demande) || (tous.length === 1 ? tous[0] : null);
-  if (!classeur) {
-    afficherEtagere(donnees, demande);
+  const classeur = tous.find((c) => c.lien === demande) || (!demande && ouverts.length === 1 ? ouverts[0] : null);
+  if (classeur && !estOuvert(classeur)) {
+    document.title = classeur.nom;
+    $('nom').textContent = classeur.nom;
+    $('app').classList.add('est-etagere');
+    annoncer(classeur.debut && aujourdhui() < classeur.debut
+      ? `Ce classeur sera disponible à partir du ${dateEnClair(classeur.debut)}.`
+      : `Ce classeur était disponible jusqu'au ${dateEnClair(classeur.fin)}.`, true);
     return;
   }
-  if (tous.length > 1) $('btn-classeurs').hidden = false;
+  if (!classeur) {
+    afficherEtagere({ ...donnees, classeurs: ouverts }, demande);
+    return;
+  }
+  if (ouverts.length > 1) $('btn-classeurs').hidden = false;
   document.documentElement.dataset.couleur = classeur.couleur || 'bleu';
   const garde = { titre: classeur.titre, sousTitre: classeur.sousTitre, enseignant: donnees.enseignant };
   donnees = garde;
