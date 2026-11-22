@@ -298,3 +298,40 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .onglet { transition: none; }
 }
+
+/* ---------- Couleurs de classeur ---------- */
+:root[data-couleur="rouge"], .dos[data-couleur="rouge"] { --carton: #b23a3a; --carton-bord: #7e2323; }
+:root[data-couleur="vert"], .dos[data-couleur="vert"] { --carton: #2f7a55; --carton-bord: #1d5239; }
+:root[data-couleur="violet"], .dos[data-couleur="violet"] { --carton: #6a4aa0; --carton-bord: #47307a; }
+:root[data-couleur="orange"], .dos[data-couleur="orange"] { --carton: #cf7428; --carton-bord: #9c5216; }
+:root[data-couleur="gris"], .dos[data-couleur="gris"] { --carton: #4b5563; --carton-bord: #2c333d; }
+.dos[data-couleur="bleu"] { --carton: #2a4a9c; --carton-bord: #1b3273; }
+
+/* ---------- Étagère ---------- */
+.est-etagere .barre--bas, .est-etagere #btn-sommaire, .est-etagere #btn-loupe { display: none; }
+.est-etagere .table { place-items: start center; overflow-y: auto; align-content: start; gap: 18px; padding-block: 8px 24px; }
+.etagere {
+  width: min(100%, 980px); display: grid; gap: 22px;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 180px)); justify-content: center;
+}
+.dos {
+  position: relative; display: grid; place-items: center; aspect-ratio: 3 / 4; padding: 14% 10% 14% 20%;
+  border-radius: 6px 10px 10px 6px; text-decoration: none; color: var(--encre);
+  background: linear-gradient(90deg, var(--carton-bord) 0 9%, rgba(255, 255, 255, .12) 9% 9.6%, var(--carton) 9.6%);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, .25) inset, 0 12px 22px -10px var(--ombre), 0 2px 4px var(--ombre);
+  transition: translate .15s ease, box-shadow .15s ease;
+}
+.dos:hover, .dos:focus-visible { translate: 0 -4px; box-shadow: 0 18px 26px -12px var(--ombre), 0 2px 4px var(--ombre); }
+.dos__anneaux {
+  position: absolute; left: 3.5%; top: 18%; bottom: 18%; width: 3%;
+  background: radial-gradient(circle, #e9ecf1 0 45%, transparent 50%) 0 0 / 100% 33.3% repeat-y;
+}
+.dos__etiquette {
+  width: 100%; display: grid; gap: 4px; justify-items: center; text-align: center;
+  padding: 12px 8px 10px; background: var(--papier); border-radius: 6px; rotate: -1.5deg;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, .25);
+}
+.dos__nom { font-family: var(--ecriture); font-size: 1.35rem; line-height: 1.5; overflow-wrap: anywhere; }
+.dos__titre { font-size: .82rem; color: var(--encre-douce); line-height: 1.25; }
+.dos__compte { font-size: .78rem; font-weight: 700; color: var(--encre-douce); }
+@media (prefers-reduced-motion: reduce) { .dos { transition: none; } }

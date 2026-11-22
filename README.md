@@ -1,43 +1,42 @@
-# Classeur virtuel
+# Classeurs virtuels
 
-Un classeur de mathématiques à feuilleter en ligne : les fiches PDF (cours, méthodes, exercices…)
+Des classeurs de mathématiques à feuilleter en ligne, un par classe : les fiches PDF (cours, méthodes, exercices…)
 sont rangées derrière des intercalaires, avec un sommaire, et les pages se tournent comme dans un vrai classeur.
-Il fonctionne sur ordinateur, tablette et téléphone.
+Ils fonctionnent sur ordinateur, tablette et téléphone.
 
-## Ajouter une fiche
+## Tout se gère depuis la page de gestion
 
-1. Ouvrir le dossier `pdf/`, puis le dossier de l'intercalaire voulu (par exemple `1 - Cours`).
-2. Cliquer sur **Add file → Upload files**, déposer le PDF, puis **Commit changes**.
-3. Attendre une à deux minutes : le sommaire est refait et le classeur est remis en ligne tout seul.
+Ouvrir `gestion.html` (l'adresse du site suivie de `gestion.html`). On y peut :
 
-Pour retirer une fiche, ouvrir le fichier puis **Delete file**.
+- créer un classeur par classe, choisir sa couleur, le titre et le sous-titre de sa page de garde ;
+- copier le lien à donner aux élèves de chaque classe ;
+- ajouter, renommer, ranger, déplacer ou supprimer des intercalaires et des fiches PDF ;
+- toucher **Publier** : tout est mis en ligne en une minute environ.
 
-## Noms et ordre
+La première fois, la page demande une clé d'accès GitHub et explique comment la créer.
 
-- Chaque **dossier** de `pdf/` est un intercalaire ; chaque **PDF** qu'il contient est une fiche.
-- Le nom du fichier devient le titre affiché : `2 - Opérations sur les fractions.pdf` s'affiche « Opérations sur les fractions ».
-- Le numéro au début du nom sert seulement à ranger (1, 2, 3… 10, 11) ; il n'est pas affiché.
-- Pour créer un nouvel intercalaire, déposer un dossier entier (par exemple `4 - Devoirs`) dans `pdf/` depuis l'ordinateur.
+## Liens
 
-## Changer le titre du classeur
+- `…/classeur-virtuel/` : l'étagère avec tous les classeurs.
+- `…/classeur-virtuel/?classeur=6e-a` : directement le classeur d'une classe (lien affiché dans la page de gestion).
 
-Modifier `reglages.json` :
+## Rangement des fichiers
 
-```json
-{
-  "titre": "Classeur de mathématiques",
-  "sousTitre": "Cours, méthodes et exercices",
-  "enseignant": "Mme Calonne"
-}
+La page de gestion range tout elle-même :
+
+```
+classeurs/1 - 6e A/reglages.json               page de garde et couleur de ce classeur
+classeurs/1 - 6e A/1 - Cours/1 - Les fractions.pdf
+reglages.json                                   nom affiché sur toutes les pages de garde
 ```
 
-## Bon à savoir
+`classeur.json` est écrit automatiquement à chaque mise en ligne : inutile de le modifier.
 
-- Viser des PDF de moins de 5 Mo chacun : au-delà, les pages mettent du temps à s'afficher sur téléphone.
-  Les documents scannés gagnent à être compressés avant dépôt.
-- Le classeur n'est pas référencé par les moteurs de recherche, mais il n'a pas de mot de passe :
-  toute personne qui a le lien peut le consulter.
-- `classeur.json` est écrit automatiquement à partir du dossier `pdf/` : inutile de le modifier à la main.
+## Mettre à jour l'application
+
+`gestion.html` contient une copie des fichiers de l'application (`node tools/assembler-gestion.mjs` la met à jour).
+Quand cette copie diffère de ce qui est en ligne, la page de gestion propose de l'installer à la prochaine publication.
+Une nouvelle `gestion.html` reçue s'installe depuis la page de gestion elle-même (« Installer une mise à jour reçue »).
 
 ## Essayer sur son ordinateur
 
@@ -52,5 +51,5 @@ Puis ouvrir http://localhost:8000.
 
 [PDF.js](https://mozilla.github.io/pdf.js/) (Apache 2.0) pour afficher les PDF,
 [StPageFlip](https://github.com/Nodlik/StPageFlip) (MIT) pour l'effet de page tournée,
-polices Playwrite FR Moderne et Atkinson Hyperlegible (SIL OFL). Tout est hébergé avec le classeur :
-aucune donnée n'est envoyée à un service extérieur.
+polices Playwrite FR Moderne et Atkinson Hyperlegible (SIL OFL). Tout est hébergé avec le site :
+aucune donnée n'est envoyée à un service extérieur, sauf les échanges de la page de gestion avec GitHub.

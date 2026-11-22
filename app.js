@@ -440,6 +440,32 @@ function zoomer(sens) {
   dessinerLoupe();
 }
 
+/* ---------- Étagère : le choix du classeur quand il y en a plusieurs ---------- */
+function afficherEtagere(donnees, demande) {
+  const titre = donnees.enseignant ? `Les classeurs de ${donnees.enseignant}` : 'Les classeurs';
+  document.title = titre;
+  $('nom').textContent = titre;
+  $('app').classList.add('est-etagere');
+  if (!donnees.classeurs.length) {
+    annoncer("Aucun classeur pour l'instant. Ils apparaîtront ici dès que des fiches seront ajoutées.", true);
+    return;
+  }
+  annoncer(demande ? "Ce lien ne correspond à aucun classeur. Choisis le tien ci-dessous." : '', Boolean(demande));
+  const etagere = el('nav', 'etagere');
+  etagere.setAttribute('aria-label', 'Classeurs');
+  for (const c of donnees.classeurs) {
+    const n = c.rubriques.reduce((s, r) => s + r.documents.length, 0);
+    const lien = el('a', 'dos');
+    lien.href = `?classeur=${encodeURIComponent(c.lien)}`;
+    lien.dataset.couleur = c.couleur || 'bleu';
+    const etiquette = el('span', 'dos__etiquette');
+    etiquette.append(el('span', 'dos__nom', c.nom), el('span', 'dos__titre', c.titre), el('span', 'dos__compte', pluriel(n, 'fiche')));
+    lien.append(el('span', 'dos__anneaux'), etiquette);
+    etagere.append(lien);
+  }
+  table.append(etagere);
+}
+
 /* ---------- Démarrage ---------- */
 function annoncer(texte, erreur = false) {
   const m = $('message');
@@ -448,9 +474,9 @@ function annoncer(texte, erreur = false) {
   m.hidden = !texte;
 }
 
-async function compterPagesManquantes(donnees) {
+async function compterPagesManquantes(classeur) {
   // classeur.json donne normalement le nombre de pages ; sinon on ouvre le PDF pour le connaître.
-  for (const r of donnees.rubriques) {
+  for (const r of classeur.rubriques) {
     for (const d of r.documents) {
       if (d.pages) continue;
       try {
@@ -475,12 +501,30 @@ async function demarrer() {
     annoncer("Le classeur n'a pas pu s'ouvrir. Vérifie ta connexion puis recharge la page.", true);
     return;
   }
-  donnees.rubriques ??= [];
-  await compterPagesManquantes(donnees);
-  assembler(donnees);
+  // Ancien format (un seul classeur) : on l'emballe comme une liste d'un classeur.
+  if (!Array.isArray(donnees.classeurs)) {
+    donnees = {
+      enseignant: donnees.enseignant || '',
+      classeurs: [{ lien: '', nom: donnees.titre || 'Classeur', titre: donnees.titre || 'Classeur de mathématiques', sousTitre: donnees.sousTitre || '', couleur: 'bleu', rubriques: donnees.rubriques || [] }],
+    };
+  }
+  const tous = donnees.classeurs;
+  const demande = new URLSearchParams(location.search).get('classeur');
+  const classeur = tous.find((c) => c.lien === demande) || (tous.length === 1 ? tous[0] : null);
+  if (!classeur) {
+    afficherEtagere(donnees, demande);
+    return;
+  }
+  if (tous.length > 1) $('btn-classeurs').hidden = false;
+  document.documentElement.dataset.couleur = classeur.couleur || 'bleu';
+  const garde = { titre: classeur.titre, sousTitre: classeur.sousTitre, enseignant: donnees.enseignant };
+  donnees = garde;
+  classeur.rubriques ??= [];
+  await compterPagesManquantes(classeur);
+  assembler(classeur);
 
-  document.title = donnees.titre;
-  $('nom').textContent = donnees.titre;
+  document.title = tous.length > 1 ? `${classeur.nom} · ${classeur.titre}` : classeur.titre;
+  $('nom').textContent = document.title;
   if (!rubriques.length) {
     annoncer("Ce classeur est encore vide. Les fiches apparaîtront ici dès qu'elles seront ajoutées.", true);
     return;
