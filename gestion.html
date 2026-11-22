@@ -1,0 +1,744 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Gérer le classeur">
+<title>Gérer le classeur</title>
+<style>
+/* Page de gestion : une colonne de cartes-intercalaires, une barre « Publier » collée en bas.
+   Les changements restent sur l'appareil jusqu'à « Publier », qui les envoie en une seule fois. */
+@font-face { font-family: "Playwrite FR Moderne"; src: url("vendor/fonts/playwrite-fr-moderne-latin-400-normal.woff2") format("woff2"); font-display: swap; }
+@font-face { font-family: "Atkinson Hyperlegible"; src: url("vendor/fonts/atkinson-hyperlegible-latin-400-normal.woff2") format("woff2"); font-weight: 400; font-display: swap; }
+@font-face { font-family: "Atkinson Hyperlegible"; src: url("vendor/fonts/atkinson-hyperlegible-latin-700-normal.woff2") format("woff2"); font-weight: 700; font-display: swap; }
+
+:root {
+  --fond: #d3dbd4;
+  --carte: #fbfcfa;
+  --texte: #1b2a26;
+  --doux: #55655e;
+  --trait: #b8c4bb;
+  --champ: #ffffff;
+  --bleu: #2a4a9c;
+  --bleu-texte: #ffffff;
+  --rouge: #b3261e;
+  --vert: #24734a;
+  --ombre: rgba(20, 35, 30, .18);
+  --onglet-1: #f3a7ba; --onglet-2: #f4d36b; --onglet-3: #a2d7a7;
+  --onglet-4: #9dc8ef; --onglet-5: #f5b481; --onglet-6: #c6b5ee;
+  --encre-onglet: #1d2a5e;
+  --ecriture: "Playwrite FR Moderne", "Segoe Script", cursive;
+  --lecture: "Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --fond: #17231e; --carte: #1f2d27; --texte: #e7eee8; --doux: #a3b3aa; --trait: #3d5047;
+    --champ: #15201b; --bleu: #9db6f5; --bleu-texte: #10182f; --rouge: #ff8a80; --vert: #7fd3a3;
+    --ombre: rgba(0, 0, 0, .45); color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --fond: #17231e; --carte: #1f2d27; --texte: #e7eee8; --doux: #a3b3aa; --trait: #3d5047;
+  --champ: #15201b; --bleu: #9db6f5; --bleu-texte: #10182f; --rouge: #ff8a80; --vert: #7fd3a3;
+  --ombre: rgba(0, 0, 0, .45); color-scheme: dark;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body {
+  margin: 0; background: var(--fond); color: var(--texte);
+  font-family: var(--lecture); font-size: 17px; line-height: 1.45;
+  -webkit-text-size-adjust: 100%;
+}
+.page {
+  max-width: 780px; margin: 0 auto;
+  padding-top: max(16px, env(safe-area-inset-top, 0px));
+  padding-bottom: 140px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: grid; gap: 20px;
+}
+.entete { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.entete h1 { flex: 1 1 auto; margin: 0; font-family: var(--ecriture); font-weight: 400; font-size: 1.7rem; line-height: 1.6; }
+
+button, .bouton, select, input { font: inherit; }
+.bouton {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  min-height: 44px; padding: 0 16px; border-radius: 22px;
+  border: 1px solid var(--trait); background: var(--carte); color: var(--texte);
+  font-weight: 700; text-decoration: none; cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
+.bouton:disabled { opacity: .45; cursor: default; }
+.bouton--principal { background: var(--bleu); border-color: var(--bleu); color: var(--bleu-texte); }
+.bouton--discret { border-color: transparent; background: transparent; color: var(--doux); font-weight: 400; text-decoration: underline; padding: 0 4px; }
+:focus-visible { outline: 3px solid var(--bleu); outline-offset: 2px; }
+svg.i { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+
+.carte { background: var(--carte); border-radius: 14px; padding: 20px; box-shadow: 0 1px 3px var(--ombre); }
+.carte h2 { margin: 0 0 8px; font-size: 1.2rem; }
+.carte p { margin: 0 0 12px; }
+.etapes { margin: 0 0 16px; padding-left: 1.3em; display: grid; gap: 8px; }
+.champ { display: grid; gap: 6px; }
+.champ span { font-weight: 700; font-size: .95rem; }
+.champ input {
+  width: 100%; min-height: 46px; padding: 8px 12px; border-radius: 10px;
+  border: 1px solid var(--trait); background: var(--champ); color: var(--texte);
+}
+.ligne-boutons { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 14px; }
+.note { color: var(--doux); font-size: .92rem; }
+.erreur { color: var(--rouge); font-weight: 700; }
+
+/* Page de garde */
+details.carte summary { cursor: pointer; font-weight: 700; font-size: 1.05rem; list-style-position: inside; }
+details.carte[open] summary { margin-bottom: 14px; }
+.reglages { display: grid; gap: 14px; }
+
+/* Intercalaires */
+.rubriques { display: grid; gap: 26px; }
+.rubrique { position: relative; }
+.rubrique__onglet {
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+  width: fit-content; max-width: 100%; padding: 8px 8px 8px 14px;
+  background: var(--c); color: var(--encre-onglet); border-radius: 12px 12px 0 0;
+}
+.rubrique__nom {
+  min-width: 0; width: 15em; max-width: 100%; min-height: 40px; padding: 4px 8px;
+  border: 1px solid transparent; border-radius: 8px; background: rgba(255, 255, 255, .55); color: var(--encre-onglet);
+  font-weight: 700; font-size: 1.05rem;
+}
+.rubrique__nom:focus { background: #fff; border-color: var(--encre-onglet); }
+.rubrique__corps {
+  background: var(--carte); border-radius: 0 14px 14px 14px; box-shadow: 0 1px 3px var(--ombre);
+  border-top: 5px solid var(--c); padding: 6px 14px 14px;
+}
+.c0 { --c: #c9cfcb; } .c1 { --c: var(--onglet-1); } .c2 { --c: var(--onglet-2); } .c3 { --c: var(--onglet-3); }
+.c4 { --c: var(--onglet-4); } .c5 { --c: var(--onglet-5); } .c6 { --c: var(--onglet-6); }
+
+.fiches { list-style: none; margin: 0; padding: 0; }
+.fiche { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--trait); }
+.fiche__texte { flex: 1 1 auto; min-width: 0; display: grid; gap: 2px; }
+.fiche__titre {
+  width: 100%; min-height: 42px; padding: 6px 10px; border-radius: 8px;
+  border: 1px solid transparent; background: transparent; color: var(--texte); font-weight: 700;
+}
+.fiche__titre:hover { border-color: var(--trait); }
+.fiche__titre:focus { border-color: var(--bleu); background: var(--champ); }
+.fiche__meta { padding: 0 10px; font-size: .88rem; color: var(--doux); overflow-wrap: anywhere; }
+.fiche__meta a { color: inherit; }
+.fiche__meta .nouvelle { color: var(--vert); font-weight: 700; }
+.fiche__meta .attention { color: var(--rouge); font-weight: 700; }
+.outils { display: flex; gap: 4px; flex: none; align-items: center; }
+.icone {
+  position: relative; display: inline-grid; place-items: center; width: 40px; height: 40px;
+  border-radius: 50%; border: 0; background: transparent; color: var(--texte); cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.icone:hover:not(:disabled) { background: rgba(127, 140, 133, .18); }
+.icone:disabled { opacity: .25; cursor: default; }
+.icone--suppr { color: var(--rouge); }
+.rubrique__onglet .icone { color: var(--encre-onglet); }
+.icone select { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; font-size: 16px; }
+.est-supprimee .fiche__titre, .est-supprimee .fiche__meta, .rubrique.est-supprimee .rubrique__nom { text-decoration: line-through; opacity: .55; }
+.restaurer { min-height: 36px; padding: 0 12px; font-size: .9rem; }
+
+.ajouter {
+  position: relative; display: flex; align-items: center; justify-content: center; gap: 8px;
+  margin-top: 12px; min-height: 48px; border: 2px dashed var(--trait); border-radius: 12px;
+  color: var(--bleu); font-weight: 700; cursor: pointer;
+}
+.ajouter input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.vide { margin: 12px 0 0; color: var(--doux); font-size: .92rem; }
+.nouvel-intercalaire { justify-self: start; }
+
+/* Barre « Publier » */
+.barre {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 20;
+  background: var(--carte); box-shadow: 0 -2px 12px var(--ombre);
+  padding-top: 12px; padding-bottom: max(12px, env(safe-area-inset-bottom, 0px));
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.barre__dedans { max-width: 780px; margin: 0 auto; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.barre__texte { flex: 1 1 260px; min-width: 0; margin: 0; }
+.barre__texte strong { display: block; }
+.barre.est-ok .barre__texte strong { color: var(--vert); }
+.barre.est-erreur .barre__texte strong { color: var(--rouge); }
+.occupe .page { pointer-events: none; opacity: .7; }
+
+@media (max-width: 560px) {
+  .fiche { flex-wrap: wrap; }
+  .fiche .outils { width: 100%; justify-content: flex-end; }
+  .rubrique__nom { width: 100%; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .bouton, .icone { transition: background-color .15s ease; }
+}
+</style>
+</head>
+<body>
+<div class="page">
+  <header class="entete">
+    <h1>Gérer le classeur</h1>
+    <a class="bouton" href="./" target="_blank" rel="noopener">Voir le classeur</a>
+  </header>
+
+  <p class="carte" id="ecran-chargement" role="status">Ouverture…</p>
+
+  <section class="carte" id="ecran-connexion" hidden>
+    <h2>Relier cet appareil au classeur</h2>
+    <p>Pour modifier le classeur depuis cet appareil, il faut une clé d'accès GitHub. Cela se fait une seule fois par appareil.</p>
+    <ol class="etapes">
+      <li>Touchez <b>Créer la clé</b> : GitHub s'ouvre dans un nouvel onglet (connectez-vous si on vous le demande).</li>
+      <li>Dans <b>Expiration</b>, choisissez <b>No expiration</b>, puis descendez tout en bas et touchez <b>Generate token</b>.</li>
+      <li>Touchez l'icône de copie à côté du code qui commence par <b>ghp_</b>, revenez ici et collez-le ci-dessous.</li>
+    </ol>
+    <a class="bouton" id="lien-cle" target="_blank" rel="noopener"
+       href="https://github.com/settings/tokens/new?scopes=public_repo&amp;description=Gestion%20du%20classeur">Créer la clé</a>
+    <form id="form-connexion" class="ligne-boutons" autocomplete="off">
+      <label class="champ" style="flex: 1 1 280px">
+        <span>Clé d'accès</span>
+        <input type="password" id="champ-cle" placeholder="ghp_…" autocapitalize="off" autocorrect="off" spellcheck="false" required>
+      </label>
+      <button type="submit" class="bouton bouton--principal" style="align-self: end">Se connecter</button>
+    </form>
+    <p class="erreur" id="erreur-connexion" role="alert" hidden></p>
+    <p class="note">La clé reste sur cet appareil. Sur iPad ou iPhone, ajoutez cette page à l'écran d'accueil (bouton Partager, puis « Sur l'écran d'accueil ») : elle s'ouvrira comme une application et gardera la clé.</p>
+  </section>
+
+  <section id="ecran-gestion" hidden>
+    <div style="display: grid; gap: 22px">
+      <details class="carte">
+        <summary>Page de garde</summary>
+        <div class="reglages">
+          <label class="champ"><span>Titre du classeur</span><input id="r-titre"></label>
+          <label class="champ"><span>Sous-titre</span><input id="r-sousTitre"></label>
+          <label class="champ"><span>Nom affiché</span><input id="r-enseignant"></label>
+        </div>
+      </details>
+      <div class="rubriques" id="rubriques"></div>
+      <button type="button" class="bouton nouvel-intercalaire" id="nouvel-intercalaire">
+        <svg class="i" viewBox="0 0 20 20" aria-hidden="true"><path d="M10 4v12M4 10h12"/></svg>
+        Nouvel intercalaire
+      </button>
+      <p class="note">Les changements ne sont visibles par les élèves qu'après avoir touché <b>Publier</b>.
+        <button type="button" class="bouton bouton--discret" id="deconnexion">Retirer la clé de cet appareil</button></p>
+    </div>
+  </section>
+
+  <p class="carte erreur" id="ecran-erreur" role="alert" hidden></p>
+</div>
+
+<footer class="barre" id="barre" hidden>
+  <div class="barre__dedans">
+    <p class="barre__texte" role="status"><strong id="barre-titre"></strong><span id="barre-detail"></span></p>
+    <button type="button" class="bouton" id="annuler">Annuler</button>
+    <button type="button" class="bouton bouton--principal" id="publier">Publier</button>
+  </div>
+</footer>
+
+<script type="module">
+import * as pdfjs from './vendor/pdf.min.js';
+pdfjs.GlobalWorkerOptions.workerSrc = new URL('./vendor/pdf.worker.min.js', import.meta.url).href;
+
+/* ---------- Outils ---------- */
+const $ = (id) => document.getElementById(id);
+const el = (balise, attributs = {}, ...enfants) => {
+  const e = document.createElement(balise);
+  for (const [k, v] of Object.entries(attributs)) {
+    if (v === false || v == null) continue;
+    if (k === 'class') e.className = v;
+    else if (k.startsWith('on')) e.addEventListener(k.slice(2), v);
+    else if (k in e && typeof v !== 'string') e[k] = v;
+    else e.setAttribute(k, v === true ? '' : v);
+  }
+  e.append(...enfants.flat().filter((x) => x != null && x !== false));
+  return e;
+};
+const icone = (d) => {
+  const s = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  s.setAttribute('viewBox', '0 0 20 20'); s.setAttribute('class', 'i'); s.setAttribute('aria-hidden', 'true');
+  s.innerHTML = d;
+  return s;
+};
+const ICONES = {
+  haut: '<path d="M5 12.5 10 7.5l5 5"/>',
+  bas: '<path d="m5 7.5 5 5 5-5"/>',
+  deplacer: '<path d="M4 7h11m-3-3 3 3-3 3M16 13H5m3 3-3-3 3-3"/>',
+  suppr: '<path d="M4.5 6h11M8 6V4.5h4V6m-6 0 .7 9.5h6.6L14 6"/>',
+  plus: '<path d="M10 4v12M4 10h12"/>',
+};
+const pluriel = (n, un, plusieurs = un + 's') => `${n} ${n > 1 ? plusieurs : un}`;
+const lire = (k) => { try { return localStorage.getItem(k); } catch { return null; } };
+const ecrire = (k, v) => { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch { /* stockage indisponible */ } };
+const tri = new Intl.Collator('fr', { numeric: true, sensitivity: 'base' });
+
+// Même règle que tools/construire-sommaire.mjs : « 2 - Les fractions.pdf » s'affiche « Les fractions ».
+const titreDepuis = (nom) =>
+  nom.replace(/\.pdf$/i, '').replace(/^\s*\d+\s*[-–—_.)]*\s*/, '').replace(/_/g, ' ').trim().normalize('NFC') || nom;
+const nomDeFichier = (t) =>
+  t.normalize('NFC').replace(/[\/\\*?"<>|\u0000-\u001f]/g, '-').replace(/\s+/g, ' ').trim().slice(0, 120) || 'Sans titre';
+
+const texteEnBase64 = (s) => {
+  const octets = new TextEncoder().encode(s);
+  let b = '';
+  for (let i = 0; i < octets.length; i += 0x8000) b += String.fromCharCode(...octets.subarray(i, i + 0x8000));
+  return btoa(b);
+};
+const base64EnTexte = (b64) => new TextDecoder().decode(Uint8Array.from(atob(b64.replace(/\s/g, '')), (c) => c.charCodeAt(0)));
+const fichierEnBase64 = (f) => new Promise((ok, ko) => {
+  const r = new FileReader();
+  r.onload = () => ok(String(r.result).split(',')[1]);
+  r.onerror = () => ko(r.error);
+  r.readAsDataURL(f);
+});
+
+/* ---------- Le dépôt GitHub derrière ce site ---------- */
+const enLocal = ['localhost', '127.0.0.1'].includes(location.hostname);
+const API = (enLocal && window.__API__) || 'https://api.github.com';
+function trouverDepot() {
+  if (enLocal && window.__DEPOT__) return window.__DEPOT__;
+  const m = /^([a-z0-9-]+)\.github\.io$/i.exec(location.hostname);
+  if (!m) return null;
+  const premier = location.pathname.split('/').filter(Boolean)[0];
+  const nom = premier && !/\.html?$/i.test(premier) ? decodeURIComponent(premier) : `${m[1]}.github.io`;
+  return { proprio: m[1], nom };
+}
+const DEPOT = trouverDepot();
+
+class ErreurGitHub extends Error {
+  constructor(statut, texte) { super(`GitHub ${statut}`); this.statut = statut; this.texte = texte; }
+}
+let cle = lire('classeur-cle');
+async function gh(chemin, { methode = 'GET', corps } = {}) {
+  const reponse = await fetch(`${API}/repos/${DEPOT.proprio}/${DEPOT.nom}${chemin}`, {
+    method: methode,
+    cache: 'no-store',
+    headers: {
+      Accept: 'application/vnd.github+json',
+      Authorization: `Bearer ${cle}`,
+      ...(corps ? { 'Content-Type': 'application/json' } : {}),
+    },
+    body: corps ? JSON.stringify(corps) : undefined,
+  });
+  if (!reponse.ok) throw new ErreurGitHub(reponse.status, await reponse.text().catch(() => ''));
+  return reponse.status === 204 ? null : reponse.json();
+}
+
+/* ---------- État ---------- */
+let base = null;              // { branche, commit, arbre } : la version en ligne au chargement
+let initiaux = new Map();     // chemin du PDF -> identifiant GitHub du fichier
+let reglagesInitiaux = {};
+let reglages = {};
+let rubriques = [];
+let signatureInitiale = '';
+let pagesConnues = new Map();
+let publication = false;
+let nId = 0;
+const nouvelId = () => ++nId;
+const CHAMPS_REGLAGES = ['titre', 'sousTitre', 'enseignant'];
+
+function montrer(ecran, message) {
+  for (const e of ['chargement', 'connexion', 'gestion', 'erreur']) $(`ecran-${e}`).hidden = e !== ecran;
+  if (ecran === 'erreur') $('ecran-erreur').textContent = message;
+}
+
+async function charger() {
+  const repo = await gh('');
+  if (!repo.permissions || !repo.permissions.push) throw new ErreurGitHub(403, 'droits');
+  const branche = repo.default_branch;
+  const ref = await gh(`/git/ref/heads/${encodeURIComponent(branche)}`);
+  const commit = await gh(`/git/commits/${ref.object.sha}`);
+  const arbre = await gh(`/git/trees/${commit.tree.sha}?recursive=1`);
+  base = { branche, commit: ref.object.sha, arbre: commit.tree.sha };
+
+  initiaux = new Map();
+  const dossiers = new Map();
+  for (const e of arbre.tree) {
+    if (e.type !== 'blob' || !/^pdf\/.+\.pdf$/i.test(e.path)) continue;
+    const parties = e.path.split('/');
+    if (parties.length > 3) continue;
+    const dossier = parties.length === 3 ? parties[1] : '';
+    initiaux.set(e.path, e.sha);
+    if (!dossiers.has(dossier)) dossiers.set(dossier, []);
+    dossiers.get(dossier).push({ nom: parties[parties.length - 1], chemin: e.path, sha: e.sha, taille: e.size });
+  }
+  const ordre = [...dossiers.keys()].sort((a, b) => (a === '' ? 1 : b === '' ? -1 : tri.compare(a, b)));
+  rubriques = ordre.map((d) => {
+    const r = { id: nouvelId(), nom: d ? titreDepuis(d) : 'Autres documents', supprimee: false };
+    r.nomInitial = r.nom;
+    r.fiches = dossiers.get(d).sort((a, b) => tri.compare(a.nom, b.nom)).map((f) => {
+      const titre = titreDepuis(f.nom);
+      return { id: nouvelId(), titre, titreInitial: titre, rubriqueInitiale: r.id, chemin: f.chemin, sha: f.sha, taille: f.taille, supprimee: false };
+    });
+    return r;
+  });
+
+  reglagesInitiaux = {};
+  const fichierReglages = arbre.tree.find((e) => e.path === 'reglages.json');
+  if (fichierReglages) {
+    try { reglagesInitiaux = JSON.parse(base64EnTexte((await gh(`/git/blobs/${fichierReglages.sha}`)).content)); } catch { /* illisible : on repart de zéro */ }
+  }
+  reglages = { ...reglagesInitiaux };
+  for (const k of CHAMPS_REGLAGES) $(`r-${k}`).value = reglages[k] || '';
+
+  try {
+    const c = await (await fetch(`classeur.json?v=${Date.now()}`, { cache: 'no-store' })).json();
+    pagesConnues = new Map();
+    for (const r of c.rubriques || []) for (const d of r.documents || []) if (d.pages) pagesConnues.set(d.fichier.normalize('NFC'), d.pages);
+  } catch { /* le nombre de pages est un simple confort */ }
+
+  signatureInitiale = signature();
+  dessiner();
+  montrer('gestion');
+}
+
+/* ---------- Ce qui a changé ---------- */
+const actives = (r) => r.fiches.filter((f) => !f.supprimee);
+const reglagesPropres = () => {
+  const r = { ...reglages };
+  for (const k of CHAMPS_REGLAGES) { r[k] = (r[k] || '').trim(); if (!r[k]) delete r[k]; }
+  return r;
+};
+const reglagesModifies = () => JSON.stringify(reglagesPropres()) !== JSON.stringify((() => {
+  const r = { ...reglagesInitiaux };
+  for (const k of CHAMPS_REGLAGES) { r[k] = (r[k] || '').trim(); if (!r[k]) delete r[k]; }
+  return r;
+})());
+
+function signature() {
+  return JSON.stringify({
+    r: rubriques.filter((r) => !r.supprimee && actives(r).length).map((r) => [r.nom.trim(), actives(r).map((f) => [f.id, f.titre.trim()])]),
+    g: reglagesPropres(),
+  });
+}
+
+function resume() {
+  if (signature() === signatureInitiale) return [];
+  let ajouts = 0, suppressions = 0, renommees = 0, deplacees = 0, intercalaires = false;
+  for (const r of rubriques) {
+    if (r.supprimee) { if (r.nomInitial != null) intercalaires = true; }
+    else if (r.nom.trim() !== (r.nomInitial ?? '') && actives(r).length) intercalaires = true;
+    for (const f of r.fiches) {
+      const retiree = f.supprimee || r.supprimee;
+      if (f.fichier) { if (!retiree) ajouts++; continue; }
+      if (retiree) { suppressions++; continue; }
+      if (f.titre.trim() !== f.titreInitial) renommees++;
+      if (r.id !== f.rubriqueInitiale) deplacees++;
+    }
+  }
+  const morceaux = [];
+  if (ajouts) morceaux.push(`${pluriel(ajouts, 'fiche ajoutée', 'fiches ajoutées')}`);
+  if (suppressions) morceaux.push(`${pluriel(suppressions, 'fiche supprimée', 'fiches supprimées')}`);
+  if (renommees) morceaux.push(`${pluriel(renommees, 'fiche renommée', 'fiches renommées')}`);
+  if (deplacees) morceaux.push(`${pluriel(deplacees, 'fiche déplacée', 'fiches déplacées')}`);
+  if (intercalaires) morceaux.push('intercalaires modifiés');
+  if (reglagesModifies()) morceaux.push('page de garde modifiée');
+  if (!morceaux.length) morceaux.push('ordre modifié');
+  return morceaux;
+}
+
+// Chemins voulus dans le dépôt : « pdf/2 - Méthodes/1 - Résoudre une équation.pdf ».
+function plan() {
+  const voulus = new Map();
+  let i = 0;
+  for (const r of rubriques) {
+    if (r.supprimee || !actives(r).length) continue;
+    const dossier = `pdf/${++i} - ${nomDeFichier(r.nom)}`;
+    actives(r).forEach((f, j) => voulus.set(`${dossier}/${j + 1} - ${nomDeFichier(f.titre)}.pdf`, f));
+  }
+  return voulus;
+}
+
+/* ---------- Affichage ---------- */
+function boutonIcone(nom, libelle, action, { desactive = false, classe = '' } = {}) {
+  return el('button', { type: 'button', class: `icone ${classe}`, 'aria-label': libelle, title: libelle, disabled: desactive, onclick: action }, icone(ICONES[nom]));
+}
+function echanger(liste, i, j) { [liste[i], liste[j]] = [liste[j], liste[i]]; dessiner(); }
+
+function dessiner() {
+  const zone = $('rubriques');
+  const garder = document.activeElement && document.activeElement.dataset.cle;
+  zone.textContent = '';
+  let rang = 0;
+  rubriques.forEach((r, ri) => {
+    const couleur = r.supprimee ? 'c0' : `c${(rang++ % 6) + 1}`;
+    const autres = rubriques.filter((x) => x !== r && !x.supprimee);
+
+    const outilsRubrique = r.supprimee
+      ? el('button', { type: 'button', class: 'bouton restaurer', onclick: () => { r.supprimee = false; dessiner(); } }, 'Restaurer')
+      : el('div', { class: 'outils' },
+        boutonIcone('haut', "Monter l'intercalaire", () => echanger(rubriques, ri, ri - 1), { desactive: ri === 0 }),
+        boutonIcone('bas', "Descendre l'intercalaire", () => echanger(rubriques, ri, ri + 1), { desactive: ri === rubriques.length - 1 }),
+        boutonIcone('suppr', `Supprimer l'intercalaire « ${r.nom} » et ses fiches`, () => {
+          if (r.fiches.every((f) => f.fichier) && r.nomInitial == null) rubriques.splice(ri, 1);
+          else r.supprimee = true;
+          dessiner();
+        }, { classe: 'icone--suppr' }));
+
+    const fiches = el('ol', { class: 'fiches' }, r.fiches.map((f, fi) => {
+      const retiree = f.supprimee || r.supprimee;
+      const meta = [];
+      if (f.fichier) {
+        meta.push(el('span', { class: 'nouvelle' }, 'Nouvelle'));
+        if (f.erreur) meta.push(' · ', el('span', { class: 'attention' }, f.erreur));
+        else if (f.pages == null) meta.push(' · vérification…');
+        else meta.push(` · ${pluriel(f.pages, 'page')}`);
+        if (f.avertissement) meta.push(' · ', el('span', { class: 'attention' }, f.avertissement));
+      } else {
+        const pages = pagesConnues.get(f.chemin.normalize('NFC'));
+        if (pages) meta.push(`${pluriel(pages, 'page')} · `);
+        meta.push(el('a', { href: f.chemin.split('/').map(encodeURIComponent).join('/'), target: '_blank', rel: 'noopener' }, 'Ouvrir'));
+      }
+      const select = el('select', {
+        'aria-label': 'Déplacer vers un autre intercalaire',
+        onchange: (e) => {
+          const cible = autres.find((x) => String(x.id) === e.target.value);
+          if (!cible) return;
+          r.fiches.splice(fi, 1);
+          cible.fiches.push(f);
+          dessiner();
+        },
+      }, el('option', { value: '', selected: true, disabled: true }, 'Déplacer vers…'), autres.map((x) => el('option', { value: String(x.id) }, x.nom || 'Sans titre')));
+
+      const outils = f.supprimee && !r.supprimee
+        ? el('button', { type: 'button', class: 'bouton restaurer', onclick: () => { f.supprimee = false; dessiner(); } }, 'Restaurer')
+        : r.supprimee ? null : el('div', { class: 'outils' },
+          boutonIcone('haut', 'Monter la fiche', () => echanger(r.fiches, fi, fi - 1), { desactive: fi === 0 }),
+          boutonIcone('bas', 'Descendre la fiche', () => echanger(r.fiches, fi, fi + 1), { desactive: fi === r.fiches.length - 1 }),
+          autres.length ? el('span', { class: 'icone', title: 'Déplacer vers un autre intercalaire' }, icone(ICONES.deplacer), select) : null,
+          boutonIcone('suppr', `Supprimer la fiche « ${f.titre} »`, () => {
+            if (f.fichier) r.fiches.splice(fi, 1); else f.supprimee = true;
+            dessiner();
+          }, { classe: 'icone--suppr' }));
+
+      return el('li', { class: `fiche${retiree ? ' est-supprimee' : ''}` },
+        el('div', { class: 'fiche__texte' },
+          el('input', {
+            class: 'fiche__titre', value: f.titre, 'aria-label': 'Titre de la fiche', 'data-cle': `f${f.id}`,
+            disabled: retiree, enterkeyhint: 'done',
+            oninput: (e) => { f.titre = e.target.value; majBarre(); },
+            onkeydown: (e) => { if (e.key === 'Enter') e.target.blur(); },
+          }),
+          el('span', { class: 'fiche__meta' }, meta)),
+        outils);
+    }));
+
+    const ajout = r.supprimee ? null : el('label', { class: 'ajouter' }, icone(ICONES.plus), 'Ajouter des fiches (PDF)',
+      el('input', { type: 'file', accept: 'application/pdf,.pdf', multiple: true, onchange: (e) => { ajouterFichiers(r, [...e.target.files]); e.target.value = ''; } }));
+
+    zone.append(el('section', { class: `rubrique ${couleur}${r.supprimee ? ' est-supprimee' : ''}` },
+      el('div', { class: 'rubrique__onglet' },
+        el('input', {
+          class: 'rubrique__nom', value: r.nom, 'aria-label': "Nom de l'intercalaire", 'data-cle': `r${r.id}`,
+          disabled: r.supprimee, enterkeyhint: 'done',
+          oninput: (e) => { r.nom = e.target.value; majBarre(); },
+          onkeydown: (e) => { if (e.key === 'Enter') e.target.blur(); },
+        }),
+        outilsRubrique),
+      el('div', { class: 'rubrique__corps' },
+        fiches,
+        !r.supprimee && !r.fiches.length ? el('p', { class: 'vide' }, "Ajoutez au moins une fiche : un intercalaire vide n'apparaît pas dans le classeur.") : null,
+        r.supprimee ? el('p', { class: 'vide' }, `Cet intercalaire et ses ${pluriel(r.fiches.length, 'fiche')} seront supprimés à la publication.`) : null,
+        ajout)));
+  });
+  if (garder) zone.querySelector(`[data-cle="${garder}"]`)?.focus();
+  majBarre();
+}
+
+async function ajouterFichiers(r, fichiers) {
+  for (const fichier of fichiers) {
+    const f = { id: nouvelId(), titre: titreDepuis(fichier.name), fichier, supprimee: false, pages: null };
+    if (!/\.pdf$/i.test(fichier.name) && fichier.type !== 'application/pdf') f.erreur = "Ce fichier n'est pas un PDF.";
+    else if (fichier.size > 95e6) f.erreur = 'Fichier trop lourd (95 Mo au maximum).';
+    else if (fichier.size > 20e6) f.avertissement = 'fichier lourd : il s\'affichera lentement sur téléphone';
+    r.fiches.push(f);
+  }
+  dessiner();
+  for (const f of r.fiches.filter((x) => x.fichier && x.pages == null && !x.erreur)) {
+    try {
+      const tache = pdfjs.getDocument({ data: new Uint8Array(await f.fichier.arrayBuffer()) });
+      f.pages = (await tache.promise).numPages;
+      tache.destroy();
+    } catch {
+      f.erreur = "Ce PDF est illisible ou protégé par un mot de passe.";
+    }
+    dessiner();
+  }
+}
+
+/* ---------- Barre « Publier » ---------- */
+function etatBarre(titre, detail = '', genre = '') {
+  $('barre').hidden = false;
+  $('barre').className = `barre${genre ? ` est-${genre}` : ''}`;
+  $('barre-titre').textContent = titre;
+  $('barre-detail').textContent = detail;
+}
+function majBarre() {
+  if (publication) return;
+  const changements = resume();
+  if (!changements.length) { $('barre').hidden = true; return; }
+  const fiches = rubriques.filter((r) => !r.supprimee).flatMap(actives);
+  const enErreur = fiches.filter((f) => f.erreur).length;
+  const enCours = fiches.filter((f) => f.fichier && f.pages == null && !f.erreur).length;
+  if (enErreur) etatBarre('À corriger avant de publier', `Supprimez ${pluriel(enErreur, 'le fichier marqué en rouge', 'les fichiers marqués en rouge')}.`, 'erreur');
+  else if (enCours) etatBarre('Vérification des fichiers…', 'Un instant.');
+  else etatBarre('Changements à publier', changements.join(', ') + '.');
+  $('publier').disabled = Boolean(enErreur || enCours);
+  $('annuler').disabled = false;
+}
+
+async function attendreMiseEnLigne(voulus, avecReglages) {
+  const attendus = [...voulus].map((c) => c.normalize('NFC')).sort().join('\n');
+  const debut = Date.now();
+  while (Date.now() - debut < 6 * 60e3) {
+    await new Promise((ok) => setTimeout(ok, 6000));
+    try {
+      const c = await (await fetch(`classeur.json?v=${Date.now()}`, { cache: 'no-store' })).json();
+      const enLigne = (c.rubriques || []).flatMap((r) => r.documents.map((d) => d.fichier.normalize('NFC'))).sort().join('\n');
+      const g = reglagesPropres();
+      const garde = !avecReglages || ((c.sousTitre || '') === (g.sousTitre || '') && (c.enseignant || '') === (g.enseignant || '') && (!g.titre || c.titre === g.titre));
+      if (enLigne === attendus && garde) return true;
+    } catch { /* on réessaie */ }
+  }
+  return false;
+}
+
+async function publier() {
+  const changements = resume();
+  if (!changements.length || publication) return;
+  publication = true;
+  document.body.classList.add('occupe');
+  $('publier').disabled = true;
+  $('annuler').disabled = true;
+  const avecReglages = reglagesModifies();
+  try {
+    const voulus = plan();
+    const nouvelles = [...voulus.values()].filter((f) => f.fichier && !f.blob);
+    for (let i = 0; i < nouvelles.length; i++) {
+      etatBarre('Envoi des fichiers…', `${i + 1} sur ${nouvelles.length}. Ne fermez pas cette page.`);
+      nouvelles[i].blob = (await gh('/git/blobs', { methode: 'POST', corps: { content: await fichierEnBase64(nouvelles[i].fichier), encoding: 'base64' } })).sha;
+    }
+    etatBarre('Enregistrement…', 'Ne fermez pas cette page.');
+    const entrees = [];
+    for (const [chemin, f] of voulus) {
+      const sha = f.sha || f.blob;
+      if (initiaux.get(chemin) !== sha) entrees.push({ path: chemin, mode: '100644', type: 'blob', sha });
+    }
+    for (const chemin of initiaux.keys()) if (!voulus.has(chemin)) entrees.push({ path: chemin, mode: '100644', type: 'blob', sha: null });
+    if (avecReglages) entrees.push({ path: 'reglages.json', mode: '100644', type: 'blob', content: JSON.stringify(reglagesPropres(), null, 2) + '\n' });
+
+    if (entrees.length) {
+      const arbre = await gh('/git/trees', { methode: 'POST', corps: { base_tree: base.arbre, tree: entrees } });
+      const commit = await gh('/git/commits', { methode: 'POST', corps: { message: `Classeur : ${changements.join(', ')}`, tree: arbre.sha, parents: [base.commit] } });
+      await gh(`/git/refs/heads/${encodeURIComponent(base.branche)}`, { methode: 'PATCH', corps: { sha: commit.sha, force: false } });
+    }
+
+    etatBarre('Mise en ligne en cours…', 'Environ une minute. Vous pouvez fermer cette page, la mise en ligne continue toute seule.');
+    const enLigne = await attendreMiseEnLigne(voulus.keys(), avecReglages);
+    publication = false;
+    document.body.classList.remove('occupe');
+    await charger();
+    if (enLigne) etatBarre("C'est en ligne.", ' Les élèves voient la nouvelle version (ils devront peut-être recharger la page).', 'ok');
+    else etatBarre('Changements enregistrés.', ' La mise en ligne prend plus de temps que d\'habitude : vérifiez le classeur dans quelques minutes.', 'ok');
+    $('publier').disabled = true;
+    $('annuler').disabled = true;
+    setTimeout(() => { if (!publication && !resume().length) $('barre').hidden = true; }, 12000);
+  } catch (e) {
+    publication = false;
+    document.body.classList.remove('occupe');
+    console.error(e);
+    let message = "Rien n'a été modifié en ligne. Vérifiez la connexion internet, puis touchez Publier à nouveau.";
+    if (e instanceof ErreurGitHub && e.statut === 401) message = "La clé d'accès n'est plus valide. Touchez « Retirer la clé de cet appareil », puis créez-en une nouvelle.";
+    else if (e instanceof ErreurGitHub && e.statut === 422 && /refs/.test(e.texte + '')) message = 'Le classeur a été modifié depuis un autre appareil. Rechargez la page et refaites vos changements.';
+    etatBarre("La publication n'a pas abouti.", ' ' + message, 'erreur');
+    $('publier').disabled = false;
+    $('annuler').disabled = false;
+  }
+}
+
+/* ---------- Démarrage ---------- */
+function messageErreur(e) {
+  if (e instanceof ErreurGitHub) {
+    if (e.statut === 401) return "Cette clé n'est pas valide ou a été supprimée. Créez-en une nouvelle avec le bouton ci-dessus.";
+    if (e.statut === 403 || e.statut === 404) return `Cette clé ne permet pas de modifier le classeur. Créez-la en étant connectée au compte « ${DEPOT.proprio} ».`;
+    return `GitHub a répondu une erreur (${e.statut}). Réessayez dans un instant.`;
+  }
+  return 'Impossible de joindre GitHub. Vérifiez la connexion internet, puis réessayez.';
+}
+
+async function demarrer() {
+  if (!DEPOT) { montrer('erreur', "Ouvrez cette page depuis l'adresse du classeur en ligne (…github.io/…/gestion.html)."); return; }
+  if (!cle) { montrer('connexion'); return; }
+  try {
+    await charger();
+  } catch (e) {
+    console.error(e);
+    if (e instanceof ErreurGitHub && [401, 403, 404].includes(e.statut)) {
+      cle = null; ecrire('classeur-cle', null);
+      montrer('connexion');
+      $('erreur-connexion').textContent = messageErreur(e);
+      $('erreur-connexion').hidden = false;
+    } else {
+      montrer('erreur', messageErreur(e));
+    }
+  }
+}
+
+$('form-connexion').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const saisie = $('champ-cle').value.trim();
+  if (!saisie) return;
+  $('erreur-connexion').hidden = true;
+  cle = saisie;
+  const bouton = e.submitter || $('form-connexion').querySelector('button');
+  bouton.disabled = true;
+  try {
+    await charger();
+    ecrire('classeur-cle', cle);
+    $('champ-cle').value = '';
+  } catch (erreur) {
+    console.error(erreur);
+    cle = null;
+    montrer('connexion');
+    $('erreur-connexion').textContent = messageErreur(erreur);
+    $('erreur-connexion').hidden = false;
+  } finally {
+    bouton.disabled = false;
+  }
+});
+
+$('deconnexion').addEventListener('click', () => {
+  if (resume().length && !confirm('Des changements ne sont pas publiés. Les abandonner ?')) return;
+  cle = null;
+  ecrire('classeur-cle', null);
+  $('barre').hidden = true;
+  montrer('connexion');
+});
+
+$('nouvel-intercalaire').addEventListener('click', () => {
+  const r = { id: nouvelId(), nom: 'Nouvel intercalaire', nomInitial: null, fiches: [], supprimee: false };
+  rubriques.push(r);
+  dessiner();
+  const champ = document.querySelector(`[data-cle="r${r.id}"]`);
+  champ.focus();
+  champ.select();
+});
+
+for (const k of CHAMPS_REGLAGES) $(`r-${k}`).addEventListener('input', (e) => { reglages[k] = e.target.value; majBarre(); });
+$('publier').addEventListener('click', publier);
+$('annuler').addEventListener('click', async () => {
+  if (!confirm('Abandonner tous les changements non publiés ?')) return;
+  $('barre').hidden = true;
+  montrer('chargement');
+  try { await charger(); } catch (e) { montrer('erreur', messageErreur(e)); }
+});
+addEventListener('beforeunload', (e) => {
+  if (publication || resume().length) { e.preventDefault(); e.returnValue = ''; }
+});
+
+demarrer();
+</script>
+</body>
+</html>
