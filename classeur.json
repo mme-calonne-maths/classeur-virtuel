@@ -1,0 +1,52 @@
+{
+  "titre": "Classeur de mathématiques",
+  "sousTitre": "Cours, méthodes et exercices",
+  "enseignant": "Mme Calonne",
+  "rubriques": [
+    {
+      "titre": "Cours",
+      "documents": [
+        {
+          "titre": "Le théorème de Pythagore",
+          "fichier": "pdf/1 - Cours/1 - Le théorème de Pythagore.pdf",
+          "pages": 2
+        },
+        {
+          "titre": "Opérations sur les fractions",
+          "fichier": "pdf/1 - Cours/2 - Opérations sur les fractions.pdf",
+          "pages": 2
+        }
+      ]
+    },
+    {
+      "titre": "Méthodes",
+      "documents": [
+        {
+          "titre": "Résoudre une équation",
+          "fichier": "pdf/2 - Méthodes/1 - Résoudre une équation.pdf",
+          "pages": 1
+        },
+        {
+          "titre": "Calculer un pourcentage",
+          "fichier": "pdf/2 - Méthodes/2 - Calculer un pourcentage.pdf",
+          "pages": 1
+        }
+      ]
+    },
+    {
+      "titre": "Exercices",
+      "documents": [
+        {
+          "titre": "Exercices sur Pythagore",
+          "fichier": "pdf/3 - Exercices/1 - Exercices sur Pythagore.pdf",
+          "pages": 1
+        },
+        {
+          "titre": "Corrigé des exercices sur Pythagore",
+          "fichier": "pdf/3 - Exercices/2 - Corrigé des exercices sur Pythagore.pdf",
+          "pages": 1
+        }
+      ]
+    }
+  ]
+}

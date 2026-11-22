@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>Classeur de mathématiques</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app" id="app">
+
+  <header class="barre barre--haut">
+    <h1 class="nom" id="nom">Classeur</h1>
+    <div class="outils">
+      <button type="button" class="bouton" id="btn-sommaire">
+        <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 5h12M4 10h12M4 15h8" /></svg>
+        <span>Sommaire</span>
+      </button>
+      <button type="button" class="bouton" id="btn-loupe" disabled>
+        <svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="8.5" cy="8.5" r="5" /><path d="M12.5 12.5 17 17M6.5 8.5h4M8.5 6.5v4" /></svg>
+        <span>Agrandir</span>
+      </button>
+      <a class="bouton" id="btn-pdf" target="_blank" rel="noopener" hidden>
+        <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3v9m0 0-3.5-3.5M10 12l3.5-3.5M4 16h12" /></svg>
+        <span>PDF</span>
+      </a>
+    </div>
+  </header>
+
+  <main class="table" id="table">
+    <div class="classeur" id="classeur" hidden>
+      <nav class="onglets" id="onglets" aria-label="Intercalaires"></nav>
+      <div class="carton">
+        <div id="livre"></div>
+        <div class="anneaux" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+      </div>
+    </div>
+    <p class="message" id="message" role="status">Ouverture du classeur…</p>
+  </main>
+
+  <footer class="barre barre--bas">
+    <button type="button" class="bouton bouton--rond" id="btn-prec" aria-label="Page précédente" disabled>
+      <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M12.5 4 6.5 10l6 6" /></svg>
+    </button>
+    <div class="repere">
+      <input type="range" id="curseur" min="1" max="1" value="1" step="1" aria-label="Aller à la page">
+      <p class="ou"><strong id="ou-page">&nbsp;</strong><span id="ou-titre"></span></p>
+    </div>
+    <button type="button" class="bouton bouton--rond" id="btn-suiv" aria-label="Page suivante" disabled>
+      <svg viewBox="0 0 20 20" aria-hidden="true"><path d="m7.5 4 6 6-6 6" /></svg>
+    </button>
+  </footer>
+</div>
+
+<div class="loupe" id="loupe" role="dialog" aria-modal="true" aria-label="Page agrandie" hidden>
+  <div class="barre barre--haut">
+    <p class="nom" id="loupe-titre"></p>
+    <div class="outils">
+      <button type="button" class="bouton bouton--rond" id="loupe-moins" aria-label="Réduire">
+        <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 10h10" /></svg>
+      </button>
+      <button type="button" class="bouton bouton--rond" id="loupe-plus" aria-label="Agrandir encore">
+        <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 10h10M10 5v10" /></svg>
+      </button>
+      <button type="button" class="bouton" id="loupe-fermer"><span>Fermer</span></button>
+    </div>
+  </div>
+  <div class="loupe__zone" id="loupe-zone"></div>
+</div>
+
+<script src="vendor/page-flip.browser.js"></script>
+<script type="module" src="app.js"></script>
+</body>
+</html>

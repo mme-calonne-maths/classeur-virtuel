@@ -1,0 +1,36 @@
+# Met le classeur en ligne (GitHub Pages) à chaque modification : refait le sommaire, puis publie.
+name: Mise en ligne du classeur
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  publier:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.publication.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Refaire le sommaire à partir du dossier pdf/
+        run: node tools/construire-sommaire.mjs
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+      - id: publication
+        uses: actions/deploy-pages@v4

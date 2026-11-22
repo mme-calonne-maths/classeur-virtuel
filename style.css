@@ -1,0 +1,300 @@
+/* Mise en page : un classeur ouvert posé sur une table. Outils en haut, feuilletage au centre,
+   repère de page en bas. Les pages créées par l'application (garde, sommaire, intercalaires)
+   se dimensionnent en multiples de --u (un centième de la largeur d'une feuille, fixé par app.js) : elles grandissent avec la feuille, comme du papier. */
+
+@font-face {
+  font-family: "Playwrite FR Moderne";
+  src: url("vendor/fonts/playwrite-fr-moderne-latin-400-normal.woff2") format("woff2");
+  font-weight: 400; font-display: swap;
+}
+@font-face {
+  font-family: "Atkinson Hyperlegible";
+  src: url("vendor/fonts/atkinson-hyperlegible-latin-400-normal.woff2") format("woff2");
+  font-weight: 400; font-display: swap;
+}
+@font-face {
+  font-family: "Atkinson Hyperlegible";
+  src: url("vendor/fonts/atkinson-hyperlegible-latin-700-normal.woff2") format("woff2");
+  font-weight: 700; font-display: swap;
+}
+
+:root {
+  /* La table et l'interface (changent avec le thème) */
+  --table: #d3dbd4;
+  --table-fonce: #bcc7be;
+  --texte: #1b2a26;
+  --texte-doux: #4e5f59;
+  --bouton: #f7faf7;
+  --bouton-bord: #a9b6ad;
+  --bouton-survol: #ffffff;
+  --repere: #2a4a9c;
+  --ombre: rgba(20, 35, 30, .28);
+  --voile-page: 1;
+
+  /* Le classeur et le papier (identiques dans les deux thèmes) */
+  --carton: #2a4a9c;
+  --carton-bord: #1b3273;
+  --papier: #fdfdfb;
+  --encre: #1d2a5e;
+  --encre-douce: #55618c;
+  --seyes: #e4e9f8;
+  --seyes-fort: #b9c5ec;
+  --rouge: #d5443a;
+  --acier: #c9ced6;
+  --acier-fonce: #7d8591;
+  --onglet-1: #f3a7ba;
+  --onglet-2: #f4d36b;
+  --onglet-3: #a2d7a7;
+  --onglet-4: #9dc8ef;
+  --onglet-5: #f5b481;
+  --onglet-6: #c6b5ee;
+
+  --ecriture: "Playwrite FR Moderne", "Segoe Script", "Bradley Hand", cursive;
+  --lecture: "Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --table: #17231e; --table-fonce: #101915; --texte: #e7eee8; --texte-doux: #a3b3aa;
+    --bouton: #23332c; --bouton-bord: #46594f; --bouton-survol: #2c4037; --repere: #9db6f5;
+    --ombre: rgba(0, 0, 0, .55); --voile-page: .9; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --table: #17231e; --table-fonce: #101915; --texte: #e7eee8; --texte-doux: #a3b3aa;
+  --bouton: #23332c; --bouton-bord: #46594f; --bouton-survol: #2c4037; --repere: #9db6f5;
+  --ombre: rgba(0, 0, 0, .55); --voile-page: .9; color-scheme: dark;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0;
+  background: var(--table);
+  color: var(--texte);
+  font-family: var(--lecture);
+  font-size: 16px;
+  line-height: 1.4;
+  overflow: hidden;
+  -webkit-text-size-adjust: 100%;
+}
+[hidden] { display: none !important; }
+
+.app {
+  height: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: 10px;
+  padding-block: 10px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  background: radial-gradient(120% 90% at 50% 40%, var(--table) 55%, var(--table-fonce));
+}
+
+/* ---------- Barres et boutons ---------- */
+.barre { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.nom {
+  flex: 1 1 auto; min-width: 0; margin: 0;
+  font-size: 1.05rem; font-weight: 700; letter-spacing: .01em;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.outils { display: flex; gap: 8px; flex: none; }
+
+.bouton {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  min-height: 40px; padding: 0 14px;
+  border: 1px solid var(--bouton-bord); border-radius: 20px;
+  background: var(--bouton); color: var(--texte);
+  font: inherit; font-size: .95rem; font-weight: 700; text-decoration: none;
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
+.bouton svg { width: 20px; height: 20px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.bouton:hover:not(:disabled) { background: var(--bouton-survol); }
+.bouton:active:not(:disabled) { transform: translateY(1px); }
+.bouton:disabled { opacity: .4; cursor: default; }
+.bouton--rond { width: 44px; min-height: 44px; padding: 0; border-radius: 50%; flex: none; }
+:focus-visible { outline: 3px solid var(--repere); outline-offset: 2px; }
+
+.repere { flex: 1 1 auto; min-width: 0; display: grid; gap: 2px; }
+.ou { margin: 0; font-size: .9rem; color: var(--texte-doux); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: center; }
+.ou strong { color: var(--texte); font-variant-numeric: tabular-nums; }
+.ou span:not(:empty)::before { content: " · "; }
+#curseur { width: 100%; margin: 0; height: 24px; accent-color: var(--repere); cursor: pointer; }
+
+/* ---------- La table et le classeur ---------- */
+.table { position: relative; min-width: 0; min-height: 0; display: grid; place-items: center; }
+.message { margin: 0; max-width: 34em; text-align: center; color: var(--texte-doux); }
+.message.est-erreur { color: var(--texte); }
+
+.classeur { display: grid; grid-template-columns: var(--livre, 300px); align-items: start; }
+.classeur[data-mode="double"] { grid-template-columns: auto var(--onglets, 110px); }
+
+.carton {
+  position: relative; z-index: 1;
+  width: calc(var(--livre, 300px) + 2 * var(--bord, 8px));
+  padding: var(--bord, 8px);
+  background: linear-gradient(180deg, var(--carton), var(--carton-bord));
+  border-radius: 7px;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, .25) inset, 0 14px 30px -8px var(--ombre), 0 2px 5px var(--ombre);
+}
+.classeur[data-mode="simple"] .carton { width: var(--livre, 300px); }
+/* La bibliothèque pose ses propres largeurs minimales sur ce bloc : c'est disposer() qui décide de la taille. */
+#livre { --u: 4px; width: 100%; min-width: 0 !important; min-height: 0 !important; touch-action: none; user-select: none; -webkit-user-select: none; }
+/* La bibliothèque de feuilletage déclare ces classes ; on fixe ici ce dont la mise en page dépend. */
+.stf__wrapper { position: relative; width: 100%; }
+
+/* Anneaux : au pli en double page, sur le bord gauche en page simple. */
+.anneaux { position: absolute; inset: var(--bord, 8px); pointer-events: none; z-index: 30; }
+.anneaux i {
+  position: absolute; left: 50%; translate: -50% -50%;
+  width: clamp(22px, calc(var(--livre, 300px) * .042), 46px);
+  height: clamp(6px, calc(var(--livre, 300px) * .011), 12px);
+  border-radius: 99px;
+  background: linear-gradient(180deg, #f4f6f9, var(--acier) 45%, var(--acier-fonce));
+  box-shadow: 0 2px 3px rgba(0, 0, 0, .35);
+}
+.anneaux i:nth-child(1) { top: 9.6%; }
+.anneaux i:nth-child(2) { top: 36.5%; }
+.anneaux i:nth-child(3) { top: 63.5%; }
+.anneaux i:nth-child(4) { top: 90.4%; }
+.classeur[data-mode="simple"] .anneaux i { left: 0; width: clamp(18px, calc(var(--livre, 300px) * .06), 30px); }
+
+/* ---------- Intercalaires (onglets) ---------- */
+.onglets { display: flex; min-width: 0; }
+.onglet {
+  border: 0; margin: 0; cursor: pointer;
+  font: inherit; font-size: .88rem; font-weight: 700; line-height: 1.15; color: var(--encre);
+  background: var(--c); -webkit-tap-highlight-color: transparent;
+  overflow: hidden; text-overflow: ellipsis;
+  box-shadow: 0 2px 4px var(--ombre);
+  transition: translate .15s ease, filter .15s ease;
+}
+.onglet:not(.est-ouvert) { filter: saturate(.8) brightness(.94); }
+.c1 { --c: var(--onglet-1); } .c2 { --c: var(--onglet-2); } .c3 { --c: var(--onglet-3); }
+.c4 { --c: var(--onglet-4); } .c5 { --c: var(--onglet-5); } .c6 { --c: var(--onglet-6); }
+
+/* Page simple : les onglets dépassent en haut du classeur. */
+.classeur[data-mode="simple"] .onglets {
+  gap: 4px; padding: 0 10px; overflow-x: auto; scrollbar-width: none; align-items: flex-end; height: 40px;
+}
+.classeur[data-mode="simple"] .onglets::-webkit-scrollbar { display: none; }
+.classeur[data-mode="simple"] .onglet {
+  flex: 0 1 auto; min-width: 64px; max-width: 46%; height: 34px; padding: 0 12px;
+  border-radius: 9px 9px 0 0; white-space: nowrap; translate: 0 4px;
+}
+.classeur[data-mode="simple"] .onglet.est-ouvert { translate: 0 0; height: 38px; }
+
+/* Double page : les onglets dépassent sur la tranche droite. */
+.classeur[data-mode="double"] .onglets {
+  order: 2; flex-direction: column; gap: 6px; padding: 5% 0; align-self: stretch; margin-left: -4px;
+}
+.classeur[data-mode="double"] .onglet {
+  flex: 0 1 62px; min-height: 36px; padding: 4px 8px 4px 22px; text-align: left;
+  border-radius: 0 10px 10px 0; translate: -8px 0;
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2;
+  overflow-wrap: anywhere;
+}
+.classeur[data-mode="double"] .onglet:hover { translate: -4px 0; }
+.classeur[data-mode="double"] .onglet.est-ouvert { translate: 0 0; }
+
+/* ---------- Les feuilles ---------- */
+.page { background: var(--papier); color: var(--encre); overflow: hidden; }
+.feuille { position: absolute; inset: 0; filter: brightness(var(--voile-page)); }
+.page canvas { object-fit: contain; }
+/* Ombre du pli, côté anneaux */
+.page::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(90deg, rgba(20, 30, 60, .16), transparent 5%); }
+.page.--left::after { background: linear-gradient(270deg, rgba(20, 30, 60, .16), transparent 5%); }
+
+.attente {
+  position: absolute; inset: 0; display: grid; place-items: center; padding: calc(10 * var(--u)); text-align: center;
+  font-size: calc(3.4 * var(--u)); color: var(--encre-douce);
+}
+.page.est-prete .attente { display: none; }
+
+/* Papier Seyès : carreaux de 8 mm, interlignes de 2 mm, marge rouge. */
+.seyes {
+  --carreau: calc(3.81 * var(--u));
+  background-color: var(--papier);
+  background-image:
+    linear-gradient(90deg, transparent calc(4 * var(--carreau) - 1px), var(--rouge) calc(4 * var(--carreau) - 1px), var(--rouge) calc(4 * var(--carreau) + 1px), transparent calc(4 * var(--carreau) + 1px)),
+    linear-gradient(var(--seyes-fort) 1px, transparent 1px),
+    linear-gradient(90deg, var(--seyes-fort) 1px, transparent 1px),
+    linear-gradient(var(--seyes) 1px, transparent 1px);
+  background-size: 100% 100%, var(--carreau) var(--carreau), var(--carreau) var(--carreau), var(--carreau) calc(var(--carreau) / 4);
+  background-position: 0 0, 0 -1px, -1px 0, 0 -1px;
+}
+.folio { position: absolute; bottom: calc(2.6 * var(--u)); right: calc(5 * var(--u)); font-size: calc(2.6 * var(--u)); color: var(--encre-douce); font-variant-numeric: tabular-nums; }
+.page.--left .folio { right: auto; left: calc(5 * var(--u)); }
+
+/* Page de garde : l'étiquette du classeur */
+.garde { display: grid; align-content: center; justify-items: center; gap: calc(9 * var(--u)); padding: calc(8 * var(--u)); }
+.etiquette {
+  width: calc(78 * var(--u)); padding: calc(7 * var(--u)) calc(6 * var(--u)) calc(6 * var(--u)); text-align: center;
+  background: var(--papier); border: calc(.5 * var(--u)) solid var(--carton); border-radius: calc(3 * var(--u));
+  outline: calc(.25 * var(--u)) solid var(--carton); outline-offset: calc(-1.6 * var(--u));
+  box-shadow: 0 calc(1 * var(--u)) calc(2.4 * var(--u)) rgba(20, 30, 60, .2); rotate: -1.5deg;
+}
+.etiquette__titre { margin: 0; font-family: var(--ecriture); font-weight: 400; font-size: calc(6.6 * var(--u)); line-height: 1.5; text-wrap: balance; }
+.etiquette__sous { margin: calc(3 * var(--u)) 0 0; font-size: calc(3.5 * var(--u)); color: var(--encre-douce); text-wrap: balance; }
+.etiquette__nom { margin: calc(2.4 * var(--u)) 0 0; font-size: calc(3.9 * var(--u)); font-weight: 700; }
+.etiquette__trait { width: 40%; height: 0; margin: calc(3 * var(--u)) auto 0; border: 0; border-top: calc(.4 * var(--u)) solid var(--rouge); }
+.conseil { max-width: calc(72 * var(--u)); margin: 0; padding: calc(2.4 * var(--u)) calc(3.4 * var(--u)); background: var(--papier); border-radius: calc(1.6 * var(--u)); text-align: center; font-size: calc(3.3 * var(--u)); line-height: 1.45; color: var(--encre-douce); }
+.conseil b { color: var(--encre); }
+
+/* Sommaire */
+.sommaire { padding: calc(2 * var(--carreau)) calc(5 * var(--u)) calc(8 * var(--u)) calc(4 * var(--carreau)); }
+.sommaire__titre { margin: 0 0 calc(1.5 * var(--carreau)) calc(1 * var(--carreau)); font-family: var(--ecriture); font-weight: 400; font-size: calc(6 * var(--u)); line-height: calc(3 * var(--carreau)); }
+.sommaire__titre span { border-bottom: calc(.45 * var(--u)) solid var(--rouge); padding-bottom: calc(.4 * var(--u)); }
+.sommaire__liste { display: grid; margin: 0; padding: 0; list-style: none; }
+.ligne, .entete {
+  position: relative; display: flex; align-items: baseline; gap: calc(1.5 * var(--u)); width: 100%;
+  margin: 0; padding: 0 0 0 calc(1 * var(--carreau)); border: 0; background: none; color: inherit; text-align: left;
+  font: inherit; font-size: calc(3.5 * var(--u)); line-height: calc(1.5 * var(--carreau)); cursor: pointer;
+}
+.ligne > *, .entete > * { pointer-events: none; }
+.ligne__titre { min-width: 0; overflow-wrap: anywhere; }
+.ligne__points { flex: 1 1 calc(2 * var(--u)); min-width: calc(2 * var(--u)); border-bottom: calc(.3 * var(--u)) dotted var(--encre-douce); translate: 0 calc(-.9 * var(--u)); }
+.ligne__page { font-variant-numeric: tabular-nums; font-weight: 700; }
+.ligne:hover .ligne__titre, .entete:hover .entete__titre { text-decoration: underline; text-decoration-thickness: calc(.25 * var(--u)); text-underline-offset: calc(.6 * var(--u)); }
+.entete { margin-top: calc(1.5 * var(--carreau)); font-weight: 700; font-size: calc(3.9 * var(--u)); }
+.entete:first-child { margin-top: 0; }
+.entete::before {
+  content: ""; position: absolute; left: calc(-2.5 * var(--carreau)); top: calc(.25 * var(--carreau));
+  width: calc(1.5 * var(--carreau)); height: var(--carreau); border-radius: calc(.6 * var(--u)); background: var(--c);
+  box-shadow: 0 calc(.3 * var(--u)) calc(.6 * var(--u)) rgba(20, 30, 60, .25);
+}
+
+/* Intercalaire */
+.intercalaire { background: var(--c); padding: calc(13 * var(--u)) calc(9 * var(--u)) calc(9 * var(--u)); display: flex; flex-direction: column; gap: calc(6 * var(--u)); }
+.intercalaire::before { content: ""; position: absolute; inset: 0; background: linear-gradient(135deg, rgba(255, 255, 255, .28), transparent 45%, rgba(0, 0, 0, .06)); pointer-events: none; }
+.intercalaire__titre { position: relative; margin: 0; font-family: var(--ecriture); font-weight: 400; font-size: calc(9 * var(--u)); line-height: 1.5; overflow-wrap: anywhere; }
+.intercalaire__compte { position: relative; margin: calc(-3 * var(--u)) 0 0; font-size: calc(3.4 * var(--u)); }
+.intercalaire__liste {
+  position: relative; display: grid; align-content: start; gap: calc(.8 * var(--u)); margin: 0; padding: calc(4 * var(--u)) calc(5 * var(--u)); list-style: none;
+  background: rgba(255, 255, 255, .62); border-radius: calc(2 * var(--u)); min-height: 0; overflow: hidden;
+}
+.intercalaire .ligne { padding-left: 0; line-height: 1.6; font-size: min(calc(3.6 * var(--u)), calc(calc(121.6 * var(--u)) / var(--lignes, 1) / 1.9)); }
+.intercalaire .ligne__points { translate: 0 calc(-.6 * var(--u)); }
+.intercalaire .folio { color: var(--encre); }
+
+/* ---------- Loupe ---------- */
+.loupe {
+  position: fixed; inset: 0; z-index: 100; display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 10px;
+  padding-top: max(10px, env(safe-area-inset-top, 0px));
+  background: var(--table); color: var(--texte);
+}
+.loupe > .barre { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.loupe__zone { overflow: auto; overscroll-behavior: contain; padding: 4px 16px max(24px, env(safe-area-inset-bottom, 0px)); display: grid; gap: 16px; justify-content: safe center; align-content: start; }
+.loupe__zone canvas { display: block; background: var(--papier); box-shadow: 0 6px 18px -4px var(--ombre); filter: brightness(var(--voile-page)); }
+
+/* ---------- Petits écrans ---------- */
+@media (max-width: 560px) {
+  .app { gap: 8px; padding-block: 8px; }
+  /* Le nom du classeur est déjà sur la page de garde : on laisse la place aux boutons. */
+  .app > .barre--haut .nom { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  .app > .barre--haut .outils { flex: 1 1 auto; justify-content: space-between; }
+  .bouton { padding: 0 12px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .onglet { transition: none; }
+}
