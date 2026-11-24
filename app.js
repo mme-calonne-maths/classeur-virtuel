@@ -21,7 +21,9 @@ const el = (balise, classe, texte) => {
   if (texte !== undefined) e.textContent = texte;
   return e;
 };
-const adresse = (chemin) => chemin.split('/').map(encodeURIComponent).join('/');
+// Le numéro de version (changé à chaque mise en ligne) évite que GitHub serve une copie périmée d'un fichier.
+let VERSION = '';
+const adresse = (chemin) => chemin.split('/').map(encodeURIComponent).join('/') + (VERSION ? `?v=${VERSION.slice(0, 12)}` : '');
 const pluriel = (n, mot) => `${n} ${mot}${n > 1 ? 's' : ''}`;
 const sansAnimation = matchMedia('(prefers-reduced-motion: reduce)');
 
@@ -241,7 +243,9 @@ async function dessiner(p) {
   } catch (erreur) {
     console.error(`Page illisible : ${p.doc.fichier}`, erreur);
     p.erreur = true;
-    p.feuille.querySelector('.attente').textContent = `Cette page n'a pas pu être affichée (${p.doc.titre}).`;
+    p.feuille.querySelector('.attente').textContent = /404|Missing/i.test(`${erreur && (erreur.name + erreur.message)}`)
+      ? `Cette fiche vient d'être mise à jour (${p.doc.titre}) : recharge la page pour la voir.`
+      : `Cette page n'a pas pu être affichée (${p.doc.titre}).`;
   }
 }
 
@@ -501,7 +505,8 @@ async function compterPagesManquantes(classeur) {
 async function demarrer() {
   let donnees;
   try {
-    const reponse = await fetch('classeur.json', { cache: 'no-cache' });
+    // Toujours la liste du jour : une copie de quelques minutes peut pointer vers des fiches renommées depuis.
+    const reponse = await fetch(`classeur.json?t=${Date.now()}`, { cache: 'no-store' });
     if (!reponse.ok) throw new Error(`HTTP ${reponse.status}`);
     donnees = await reponse.json();
   } catch (erreur) {
@@ -509,6 +514,7 @@ async function demarrer() {
     annoncer("Le classeur n'a pas pu s'ouvrir. Vérifie ta connexion puis recharge la page.", true);
     return;
   }
+  VERSION = donnees.version || '';
   // Ancien format (un seul classeur) : on l'emballe comme une liste d'un classeur.
   if (!Array.isArray(donnees.classeurs)) {
     donnees = {
