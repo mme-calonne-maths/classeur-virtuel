@@ -519,13 +519,16 @@ async function demarrer() {
   if (!Array.isArray(donnees.classeurs)) {
     donnees = {
       enseignant: donnees.enseignant || '',
+      etagere: true,
       classeurs: [{ lien: '', nom: donnees.titre || 'Classeur', titre: donnees.titre || 'Classeur de mathématiques', sousTitre: donnees.sousTitre || '', couleur: 'bleu', rubriques: donnees.rubriques || [] }],
     };
   }
   const tous = donnees.classeurs;
   const ouverts = tous.filter(estOuvert);
   const demande = new URLSearchParams(location.search).get('classeur');
-  const classeur = tous.find((c) => c.lien === demande) || (!demande && ouverts.length === 1 ? ouverts[0] : null);
+  // Sans étagère, chaque élève n'atteint que le classeur dont il a le lien.
+  const etagere = donnees.etagere === true;
+  const classeur = (demande && tous.find((c) => c.lien === demande)) || (!demande && etagere && ouverts.length === 1 ? ouverts[0] : null);
   if (classeur && !estOuvert(classeur)) {
     document.title = classeur.nom;
     $('nom').textContent = classeur.nom;
@@ -536,10 +539,19 @@ async function demarrer() {
     return;
   }
   if (!classeur) {
-    afficherEtagere({ ...donnees, classeurs: ouverts }, demande);
+    if (etagere) afficherEtagere({ ...donnees, classeurs: ouverts }, demande);
+    else {
+      const titre = donnees.enseignant ? `Classeurs de ${donnees.enseignant}` : 'Classeurs';
+      document.title = titre;
+      $('nom').textContent = titre;
+      $('app').classList.add('est-etagere');
+      annoncer(demande
+        ? "Ce lien ne correspond à aucun classeur. Vérifie le lien donné par ton professeur."
+        : 'Pour ouvrir ton classeur, utilise le lien donné par ton professeur.', Boolean(demande));
+    }
     return;
   }
-  if (ouverts.length > 1) $('btn-classeurs').hidden = false;
+  if (etagere && ouverts.length > 1) $('btn-classeurs').hidden = false;
   document.documentElement.dataset.couleur = classeur.couleur || 'bleu';
   const garde = { titre: classeur.titre, sousTitre: classeur.sousTitre, enseignant: donnees.enseignant };
   donnees = garde;

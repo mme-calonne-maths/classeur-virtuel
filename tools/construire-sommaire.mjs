@@ -101,6 +101,7 @@ ajouter(general.nom || 'Mon classeur', { titre: general.titre, sousTitre: genera
 
 const sortie = {
   enseignant: general.enseignant || '',
+  etagere: general.etagere === true, // page d'accueil listant tous les classeurs (désactivée par défaut)
   version: process.env.GITHUB_SHA || '',
   classeurs,
 };
