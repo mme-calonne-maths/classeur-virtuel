@@ -6,7 +6,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const racine = join(dirname(fileURLToPath(import.meta.url)), '..');
-const FICHIERS = ['index.html', 'app.js', 'style.css', 'README.md', 'tools/construire-sommaire.mjs', 'tools/assembler-gestion.mjs'];
+const FICHIERS = ['index.html', 'app.js', 'style.css', 'README.md', 'tools/construire-sommaire.mjs', 'tools/assembler-gestion.mjs', '.github/workflows/mise-en-ligne.yml'];
 
 const contenu = {};
 for (const f of FICHIERS) contenu[f] = await readFile(join(racine, f), 'utf8');
