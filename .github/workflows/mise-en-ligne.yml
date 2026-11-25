@@ -1,4 +1,6 @@
-# Met le classeur en ligne (GitHub Pages) à chaque modification : refait le sommaire, puis publie.
+# Met les classeurs en ligne (GitHub Pages) à chaque modification : refait le sommaire, puis publie.
+# Deux étapes séparées, comme le modèle officiel de GitHub, et un second essai automatique
+# si GitHub ne retrouve pas tout de suite le paquet à publier (« No artifacts named github-pages »).
 name: Mise en ligne du classeur
 
 on:
@@ -11,26 +13,39 @@ permissions:
   pages: write
   id-token: write
 
+# Une mise en ligne à la fois ; celle en cours va jusqu'au bout.
 concurrency:
   group: pages
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
-  publier:
+  preparer:
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.publication.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Refaire le sommaire à partir du dossier pdf/
+      - name: Refaire le sommaire des classeurs
         run: node tools/construire-sommaire.mjs
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
           path: .
-      - id: publication
+
+  publier:
+    needs: preparer
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.essai2.outputs.page_url || steps.essai1.outputs.page_url }}
+    steps:
+      - id: essai1
+        uses: actions/deploy-pages@v4
+        continue-on-error: true
+      - name: Attendre avant un second essai
+        if: steps.essai1.outcome == 'failure'
+        run: sleep 45
+      - id: essai2
+        if: steps.essai1.outcome == 'failure'
         uses: actions/deploy-pages@v4
